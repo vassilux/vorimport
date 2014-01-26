@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	log "github.com/cihub/seelog"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"os"
@@ -67,10 +68,10 @@ func createMongoCdr(session *mgo.Session, cdr Cdr) (err error) {
 		Recordfile: cdr.recordfile, Dst: cdr.dst}
 	err = collection.Insert(doc)
 	if err != nil {
-		log.Error("Can't insert document: %v", err)
+		log.Criticalf("Can't insert document: %v", err)
 		os.Exit(1)
 	} else {
-		log.Debug("Row inserted into mongo database: %s", doc.ClidName)
+		log.Debugf("Row inserted into mongo database: %s", doc.ClidName)
 	}
 	return
 }
@@ -102,7 +103,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 	var id = fmt.Sprintf("%04d%02d-%s-%d", cdr.calldate.Year(), cdr.calldate.Month(), cdr.src, cdr.causeStatus)
 	var metaDate = time.Date(cdr.calldate.Year(), cdr.calldate.Month(), cdr.calldate.Day(), 1, 0, 0, 0, time.UTC)
 	//
-	log.Debug("Import monthly analytics :  %s for the id %s.", collectionName, id)
+	log.Debugf("Import monthly analytics :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
 	metaDoc := metaData{User: cdr.src, Dt: metaDate, Disposition: cdr.causeStatus}
 	doc := monthlyCall{Id: id, MetaData: metaDoc, AnswereWaitTime: cdr.waitAnswer, CallMonthly: 0, DurationMonthly: 0}
@@ -120,7 +121,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 	info, err = collection.Find(selector).Apply(change, &doc)
 	//check if the can execute changes
 	if info == nil || info.Updated == 0 {
-		log.Debug("Monthly update can't be executed , get the error: [ %v], Try execute insert.", err)
+		log.Debugf("Monthly update can't be executed , get the error: [ %v], Try execute insert.", err)
 		err = collection.Insert(doc)
 		if err != nil {
 			log.Error("[mongo] Monthly insert failed with error : [%v].", err)
@@ -128,13 +129,13 @@ func processMonthlyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debug("[mongo] New record inserted : %s.", doc.Id)
+			log.Debugf("[mongo] New record inserted : %s.", doc.Id)
 		} else {
-			log.Debug("New record inserted : %s.", doc.Id)
+			log.Debugf("New record inserted : %s.", doc.Id)
 		}
 	} else {
 		if err != nil {
-			log.Debug("Document [%s] was updated, the update numbers: [%s].", doc.Id, info.Updated)
+			log.Debugf("Document [%s] was updated, the update numbers: [%s].", doc.Id, info.Updated)
 		} else {
 			return err
 		}
@@ -157,7 +158,7 @@ func processDailyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 	//var t = time.Unix(cdr.calldate, 0)
 	var id = fmt.Sprintf("%04d%02d%02d-%s-%d", cdr.calldate.Year(), cdr.calldate.Month(), cdr.calldate.Day(), cdr.src, cdr.causeStatus)
 	var metaDate = time.Date(cdr.calldate.Year(), cdr.calldate.Month(), cdr.calldate.Day(), 1, 0, 0, 0, time.UTC)
-	log.Debug("Import daily analytics :  %s for the id %s.", collectionName, id)
+	log.Debugf("Import daily analytics :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
 	metaDoc := metaData{User: cdr.src, Dt: metaDate, Disposition: cdr.causeStatus}
 	doc := dailyCall{Id: id, MetaData: metaDoc, AnswereWaitTime: cdr.waitAnswer, CallDaily: 0, DurationDaily: 0}
@@ -177,7 +178,7 @@ func processDailyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 	info, err = collection.Find(selector).Apply(change, &doc)
 	//check if the can execute changes
 	if info == nil || info.Updated == 0 {
-		log.Debug("Daily update can't be executed , get the error: [ %v], Try execute insert.", err)
+		log.Debugf("Daily update can't be executed , get the error: [ %v], Try execute insert.", err)
 		err = collection.Insert(doc)
 		if err != nil {
 			log.Error("Daily insert failed with error : [%v].", err)
@@ -185,19 +186,19 @@ func processDailyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debug("Daily document updated with success for the document : %s", doc.Id)
+			log.Debugf("Daily document updated with success for the document : %s", doc.Id)
 		} else {
-			log.Debug("Daily document can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
+			log.Debugf("Daily document can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
 		}
 	} else {
-		log.Debug("Document updated : %s\n", doc.Id)
+		log.Debugf("Document updated : %s\n", doc.Id)
 	}
 	//
 	return nil
 }
 
 func importCdrToMongo(session *mgo.Session, cdr Cdr) (err error) {
-	log.Debug("Start analyze data for mongo database.")
+	log.Debugf("Start analyze data for mongo database.")
 	createMongoCdr(session, cdr)
 	err = processDailyAnalytics(session, cdr)
 	if err != nil {

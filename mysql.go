@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	log "github.com/cihub/seelog"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
 	"time"
@@ -90,12 +91,12 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
 		return cel, err
 	}
 	if len(rows) > 0 {
-		log.Debug("Get rows for uniqueid %d", uniqueid)
+		log.Debugf("Get rows for uniqueid %d", uniqueid)
 		row := rows[0]
 		eventtime := res.Map("eventtime")
 		cel.eventtime = row.Int64(eventtime)
 	} else {
-		log.Info("Can't get rows for uniqueid %d.", uniqueid)
+		log.Infof("Can't get rows for uniqueid %d.", uniqueid)
 		cel.eventtime = 0
 	}
 

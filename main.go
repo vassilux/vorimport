@@ -1,18 +1,14 @@
 package main
 
 import (
-	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native" // Native engine
-	// _ "github.com/ziutek/mymysql/thrsafe" // Thread safe engine
-	"labix.org/v2/mgo"
-	//"labix.org/v2/mgo/bson"
-	//"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/op/go-logging"
+	log "github.com/cihub/seelog"
+	"github.com/ziutek/mymysql/mysql"
+	_ "github.com/ziutek/mymysql/native"
 	"io/ioutil"
-	stdlog "log"
+	"labix.org/v2/mgo"
 	"os"
 	"os/signal"
 	"redis"
@@ -81,7 +77,37 @@ var (
 	}
 )
 
-var log = logging.MustGetLogger("vorimport")
+/*
+func logDebug(format string, v ...interface{}) {
+	if log.IsEnabledFor(logging.DEBUG) {
+		log.Debug(format, v)
+	}
+}
+
+func logInfo(format string, v ...interface{}) {
+	if log.IsEnabledFor(logging.INFO) {
+		log.Info(format, v)
+	}
+}
+
+func logWarning(format string, v ...interface{}) {
+	if log.IsEnabledFor(logging.WARNING) {
+		log.Warning(format, v)
+	}
+}
+
+func logCritical(format string, v ...interface{}) {
+	if log.IsEnabledFor(logging.CRITICAL) {
+		log.Critical(format, v)
+	}
+}
+
+func logError(format string, v ...interface{}) {
+	if log.IsEnabledFor(logging.ERROR) {
+		log.Error(format, v)
+	}
+}
+*/
 
 /**
  *
@@ -89,7 +115,7 @@ var log = logging.MustGetLogger("vorimport")
 func loadConfig(fail bool) {
 	file, err := ioutil.ReadFile("config.json")
 	if err != nil {
-		log.Error("Can't open configuration file : %s", err)
+		log.Errorf("Can't open configuration file : %s", err)
 		if fail {
 			os.Exit(1)
 		}
@@ -116,13 +142,20 @@ func GetConfig() *Config {
 func init() {
 	//called on the start by go
 	loadConfig(true)
+	logger, err := log.LoggerFromConfigAsFile("logger.xml")
+
+	if err != nil {
+		fmt.Printf("Can not load the logger configuration file, Please check if the file logger.xml exists on current directory", err)
+	}
+
+	log.ReplaceLogger(logger)
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGUSR2)
 	go func() {
 		for {
 			<-s
 			loadConfig(false)
-			log.Error("Configuration relaoding")
+			log.Error("Configuration reloading")
 		}
 	}()
 }
@@ -144,16 +177,16 @@ func syncPublish(spec *redis.ConnectionSpec, channel string, messageType string)
 
 	client, err := redis.NewSynchClientWithSpec(spec)
 	if err != nil {
-		log.Error("Failed to create the redis client : %s", err)
+		log.Errorf("Failed to create the redis client : %s", err)
 		os.Exit(1)
 	}
 
 	msg := []byte(fmt.Sprintf("{id : %s }", messageType))
 	rcvCnt, err := client.Publish(channel, msg)
 	if err != nil {
-		log.Error("Error to publish the messge to the redis : %s", err)
+		log.Errorf("Error to publish the messge to the redis : %s", err)
 	} else {
-		log.Debug("Message published to %d subscribers", rcvCnt)
+		log.Debugf("Message published to %d subscribers", rcvCnt)
 	}
 
 	client.Quit()
@@ -162,18 +195,18 @@ func syncPublish(spec *redis.ConnectionSpec, channel string, messageType string)
 func importJob() {
 	//
 	db := mysql.New("tcp", "", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
-	log.Debug("Connecting to the database %s %s %s %s.", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
+	log.Debugf("Connecting to the database %s %s %s %s.", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
 	//
 	err := db.Connect()
 	if err != nil {
-		log.Debug("Can't connect to the mysql database error : %s.", err)
+		log.Debugf("Can't connect to the mysql database error : %s.", err)
 		os.Exit(1)
 	}
 	log.Debug("Connected to the mysql database with success.")
 	//
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
-		log.Debug("Can't connect to the mongo database error : %s.", err)
+		log.Debugf("Can't connect to the mongo database error : %s.", err)
 		os.Exit(1)
 	}
 	session.SetMode(mgo.Monotonic, true)
@@ -190,12 +223,12 @@ func importJob() {
 	var outgoingCount = 0
 	for _, cdr := range cdrs {
 		var datetime = cdr.calldate.Format(time.RFC3339)
-		log.Debug("Get raw cdr for the date %s the clid % and the context %s", datetime, cdr.clid, cdr.dcontext)
+		log.Debugf("Get raw cdr for the date %s the clid % and the context %s", datetime, cdr.clid, cdr.dcontext)
 		var cel Cel
 		cel, err = getMySqlCel(db, cdr.uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)
 		if err != nil {
-			log.Debug("Can't detect direction of the context %s", cdr.dcontext)
+			log.Debugf("Can't detect direction of the context %s", cdr.dcontext)
 			os.Exit(1)
 		}
 		if inoutstatus == 1 {
@@ -223,10 +256,10 @@ func importJob() {
 			importedStatus = -1
 		}
 		//
-		log.Info("Import executed for unique id [%s] with code : [%d], try process the mysql process updating.\n", cdr.uniqueid, importedStatus)
+		log.Infof("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n", cdr.uniqueid, importedStatus)
 		err = udpateMySqlCdrImportStatus(db, cdr.uniqueid, importedStatus)
 		if err != nil {
-			log.Error("Can't update the import status for the call with unique id [%s].", cdr.uniqueid)
+			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.uniqueid)
 			os.Exit(1)
 		}
 	}
@@ -249,19 +282,12 @@ func cleanup() {
 }
 
 func main() {
-	var format = logging.MustStringFormatter("%{level} %{message}")
-	logging.SetFormatter(format)
-	logging.SetLevel(logging.INFO, "package.example")
-
-	logBackend := logging.NewLogBackend(os.Stderr, "", stdlog.LstdFlags|stdlog.Lshortfile)
-	logBackend.Color = true
-	logging.SetBackend(logBackend)
 	//
 	config = GetConfig()
 	//
 	now := time.Now()
 	_, timeZoneOffset := now.Zone()
-	log.Info("Use the timezone offset used : %d.", timeZoneOffset)
+	log.Infof("Use the timezone offset used : %d.", timeZoneOffset)
 	//
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -287,8 +313,8 @@ func main() {
 	}()
 
 	for {
-		log.Debug("Sleeping...")
-		time.Sleep(10 * time.Second) // placeholder for the future can be used for the application state check
+		log.Trace("Sleeping...")
+		time.Sleep(10 * time.Second) //
 
 	}
 
