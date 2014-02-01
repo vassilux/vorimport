@@ -1,0 +1,42 @@
+# Makefile for the vorimport project
+#
+ 
+# Go parameters
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOINSTALL=$(GOCMD) install
+GOTEST=$(GOCMD) test
+GODEP=$(GOTEST) -i
+GOFMT=gofmt -w
+# Project target
+TARGET=./bin/vorimport 
+# Build source
+SRC_BUILD_LIST = main.go
+#Source files
+SRC_LIST=$(wildcard *.go)
+#Test files
+TEST_LIST = $(wildcard *_test.go)
+
+# 
+BUILD_LIST = $(foreach int, $(SRC_BUILD_LIST), $(int)_build)
+CLEAN_LIST = $(foreach int, $(SRC_LIST), $(int)_clean)
+FMT_TEST = $(foreach int, $(SRC_LIST), $(int)_fmt)
+ 
+# All are .PHONY for now because dependencyness is hard
+.PHONY: $(CLEAN_LIST) $(TEST_LIST) $(FMT_LIST) $(BUILD_LIST)
+ 
+all: build
+build: $(BUILD_LIST)
+clean: $(CLEAN_LIST)
+test: $(TEST_LIST)
+fmt: $(FMT_TEST)
+ 
+$(BUILD_LIST): %_build: %_fmt
+	$(GOBUILD) -o $(TARGET)
+$(CLEAN_LIST): %_clean:
+	$(GOCLEAN) $*
+$(TEST_LIST): %_test:
+	$(GOTEST) $*
+$(FMT_TEST): %_fmt:
+	$(GOFMT) $*
