@@ -1,0 +1,22 @@
+<seelog type="adaptive" mininterval="200000000" maxinterval="1000000000" critmsgcount="5">
+	<outputs formatid="msg">
+        <filter levels="trace">
+            <file path="./log/vorimport_traces.log"/>
+        </filter>
+        <filter levels="debug">
+        	<file path="./log/vorimport_debug.log"/>
+            <!--<console />-->
+        </filter>
+        <filter levels="info">
+        	<file path="./log/vorimport_info.log"/>
+            <!--<console />-->
+        </filter>
+        <filter levels="error">
+        	<file path="./log/vorimport_error.log"/>
+            <!--<console />-->
+        </filter>      
+    </outputs>
+    <formats>
+        <format id="msg" format="%Time: %Msg%n"/>
+    </formats>
+</seelog>
