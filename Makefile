@@ -1,5 +1,5 @@
 # Makefile for the vorimport project
-#
+# Helper file
  
 # Go parameters
 GOCMD=go
