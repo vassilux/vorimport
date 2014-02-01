@@ -77,38 +77,6 @@ var (
 	}
 )
 
-/*
-func logDebug(format string, v ...interface{}) {
-	if log.IsEnabledFor(logging.DEBUG) {
-		log.Debug(format, v)
-	}
-}
-
-func logInfo(format string, v ...interface{}) {
-	if log.IsEnabledFor(logging.INFO) {
-		log.Info(format, v)
-	}
-}
-
-func logWarning(format string, v ...interface{}) {
-	if log.IsEnabledFor(logging.WARNING) {
-		log.Warning(format, v)
-	}
-}
-
-func logCritical(format string, v ...interface{}) {
-	if log.IsEnabledFor(logging.CRITICAL) {
-		log.Critical(format, v)
-	}
-}
-
-func logError(format string, v ...interface{}) {
-	if log.IsEnabledFor(logging.ERROR) {
-		log.Error(format, v)
-	}
-}
-*/
-
 /**
  *
  */
@@ -313,7 +281,7 @@ func main() {
 	}()
 
 	for {
-		log.Trace("Sleeping...")
+		log.Debug("Sleeping...")
 		time.Sleep(10 * time.Second) //
 
 	}

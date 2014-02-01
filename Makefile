@@ -17,7 +17,6 @@ SRC_BUILD_LIST = main.go
 SRC_LIST=$(wildcard *.go)
 #Test files
 TEST_LIST = $(wildcard *_test.go)
-
 # 
 BUILD_LIST = $(foreach int, $(SRC_BUILD_LIST), $(int)_build)
 CLEAN_LIST = $(foreach int, $(SRC_LIST), $(int)_clean)
@@ -31,6 +30,9 @@ build: $(BUILD_LIST)
 clean: $(CLEAN_LIST)
 test: $(TEST_LIST)
 fmt: $(FMT_TEST)
+git:
+	git commit -m "$m"
+	git push https://github.com/vassilux/vorimport.git
  
 $(BUILD_LIST): %_build: %_fmt
 	$(GOBUILD) -o $(TARGET)

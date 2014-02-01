@@ -4,8 +4,8 @@
             <file path="./log/vorimport_traces.log"/>
         </filter>
         <filter levels="debug">
-        	<file path="./log/vorimport_debug.log"/>
-            <!--<console />-->
+        	<!--<file path="./log/vorimport_debug.log"/> -->
+            <console />
         </filter>
         <filter levels="info">
         	<file path="./log/vorimport_info.log"/>
