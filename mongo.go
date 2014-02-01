@@ -58,10 +58,6 @@ type monthlyCall struct {
 func createMongoCdr(session *mgo.Session, cdr Cdr) (err error) {
 	collection := session.DB(ODIN_MONGO_DATABASENAME).C("cdrs")
 	//
-	/*now := time.Now()
-	var _, offset = now.Zone()
-	var mongoCalldate = cdr.calldate + int64(offset)
-	var mongoNow = now.Unix() + int64(offset)*/
 	doc := rawCall{Id: bson.NewObjectId(), Calldate: cdr.calldate, MetadataDt: time.Unix(time.Now().Unix()+int64(timeZoneOffset), 0), ClidName: cdr.clid,
 		ClidNumber: cdr.clid, Src: cdr.src, Channel: cdr.channel, Dcontext: cdr.dcontext, Disposition: cdr.causeStatus,
 		Answerwaittime: cdr.waitAnswer, Billsec: cdr.billsec, Duration: cdr.duration, Uniqueid: cdr.uniqueid, Inoutstatus: cdr.inoutstatus,
@@ -77,17 +73,7 @@ func createMongoCdr(session *mgo.Session, cdr Cdr) (err error) {
 }
 
 /**
-{
-  "_id": "201306-6000-19",
-  "answere_wait_time": NumberInt(0),
-  "call_monthly": NumberInt(1),
-  "duration_monthly": NumberInt(0),
-  "metadata": {
-    "user": "6000",
-    "dt": ISODate("2013-06-01T01:00:00.0Z"),
-    "disposition": NumberInt(19)
-  }
-}
+ *
 **/
 func processMonthlyAnalytics(session *mgo.Session, cdr Cdr) (err error) {
 	//
