@@ -31,7 +31,7 @@ clean: $(CLEAN_LIST)
 test: $(TEST_LIST)
 fmt: $(FMT_TEST)
 git:
-	git commit -m "$m"
+	git commit -a -m "$m"
 	git push https://github.com/vassilux/vorimport.git
  
 $(BUILD_LIST): %_build: %_fmt
