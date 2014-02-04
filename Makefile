@@ -33,6 +33,12 @@ fmt: $(FMT_TEST)
 git:
 	git commit -a -m "$m"
 	git push https://github.com/vassilux/vorimport.git
+depends:
+	go get -u github.com/cihub/seelog
+	go get -u github.com/ziutek/mymysql/thrsafe
+	go get -u github.com/ziutek/mymysql/autorc
+	go get -u github.com/ziutek/mymysql/godrv
+	go get labix.org/v2/mgo
  
 $(BUILD_LIST): %_build: %_fmt
 	$(GOBUILD) -o $(TARGET)
