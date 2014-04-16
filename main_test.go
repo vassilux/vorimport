@@ -1,11 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 )
 
-func mainTester(t *testing.T) {
-	fmt.Println("Howdy buddy!!!")
-	t.Log("one test passed.")
+func Test_DstChannel(t *testing.T) {
+	var channel = "SIP/6006-01010101"
+	peer := getPeerFromChannel(channel)
+	if peer != "6006" {
+		t.Error("It is not good peer for channel [%s].", channel)
+	}
+	channel = "DAHDI/g1/0493948400-01010101"
+	peer = getPeerFromChannel(channel)
+	if peer != "0493948400" {
+		t.Error("It is not good peer [%s] for channel [%s].", peer, channel)
+	}
+	t.Log("dstChannelTester test passed.")
 }

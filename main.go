@@ -15,6 +15,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	m "vorimport/models"
 )
 
 type Context struct {
@@ -82,6 +83,7 @@ var (
  */
 func loadConfig(fail bool) {
 	file, err := ioutil.ReadFile("config.json")
+
 	if err != nil {
 		log.Errorf("Can't open configuration file : %s", err)
 		if fail {
@@ -128,16 +130,18 @@ func init() {
 	}()
 }
 
-func getInOutStatus(cdr Cdr) (status int, err error) {
+func getInOutStatus(cdr m.RawCall) (status int, err error) {
 	config = GetConfig()
+	log.Tracef("Enter into getInOutStatus")
 	for i := range config.DialplanContext {
-		if config.DialplanContext[i].Name == cdr.dcontext {
+		if config.DialplanContext[i].Name == cdr.Dcontext {
 			status = config.DialplanContext[i].Direction
 			return status, nil
 
 		}
 	}
-	return status, errors.New("[main] Can't find the context direction")
+	log.Infof("Can not find the call direction for the context [%s].", cdr.Dcontext)
+	return status, errors.New("Can't find the context direction for the context : " + cdr.Dcontext)
 
 }
 
@@ -167,15 +171,17 @@ func importJob() {
 	//
 	err := db.Connect()
 	if err != nil {
-		log.Debugf("Can't connect to the mysql database error : %s.", err)
-		os.Exit(1)
+		log.Criticalf("Can't connect to the mysql database error : %s.", err)
+		panic(err)
+		//os.Exit(1)
 	}
 	log.Debug("Connected to the mysql database with success.")
 	//
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
 		log.Debugf("Can't connect to the mongo database error : %s.", err)
-		os.Exit(1)
+		//os.Exit(1)
+		panic(err)
 	}
 	session.SetMode(mgo.Monotonic, true)
 	defer session.Close()
@@ -184,19 +190,24 @@ func importJob() {
 	cdrs, err := getMysqlCdr(db)
 	//
 	if err != nil {
-		panic(err)
+		log.Criticalf("Can not get records from mysql cause error [%s].", err)
+		log.Flush()
+		os.Exit(1)
 	}
+	log.Tracef("Start records parcing.")
 	//
 	var incommingCount = 0
 	var outgoingCount = 0
 	for _, cdr := range cdrs {
-		var datetime = cdr.calldate.Format(time.RFC3339)
-		log.Debugf("Get raw cdr for the date %s the clid % and the context %s", datetime, cdr.clid, cdr.dcontext)
-		var cel Cel
-		cel, err = getMySqlCel(db, cdr.uniqueid)
+		var datetime = cdr.Calldate.Format(time.RFC3339)
+		log.Debugf("Get raw cdr for the date [%s], the clid [%s] and the context [%s]", datetime, cdr.ClidNumber, cdr.Dcontext)
+		var cel m.Cel
+		cel, err = getMySqlCel(db, cdr.Uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)
 		if err != nil {
-			log.Debugf("Can't detect direction of the context %s", cdr.dcontext)
+			log.Criticalf("Get error[%s]. Please check your configuration file.", err)
+			log.Flush()
+			//panic(err)
 			os.Exit(1)
 		}
 		if inoutstatus == 1 {
@@ -204,30 +215,51 @@ func importJob() {
 		} else if inoutstatus == 2 {
 			incommingCount++
 		}
-		cdr.inoutstatus = inoutstatus
-		var dispostionCode = DIC_DISPOSITION[cdr.disposition]
+		cdr.InoutStatus = inoutstatus
+		var dispostionCode = DIC_DISPOSITION[cdr.DispositionStr]
 
 		if dispostionCode > 0 {
-			cdr.causeStatus = DISPOSITION_TRANSLATION[dispostionCode]
+			cdr.Disposition = DISPOSITION_TRANSLATION[dispostionCode]
 		} else {
-			cdr.causeStatus = 0
+			cdr.Disposition = 0
 		}
 
-		if cel.eventtime > 0 {
+		if cel.EventTime > 0 {
 			//extract the timezone offset
-			cdr.waitAnswer = cel.eventtime - (cdr.calldate.Unix() - timeZoneOffset)
+			cdr.AnswerWaitTime = int(cel.EventTime - (cdr.Calldate.Unix() - timeZoneOffset))
 		}
-
+		//
+		callDetails, err := getMySqlCallDetails(db, cdr.Uniqueid)
+		if err != nil {
+			log.Criticalf("Try to get the call details but get the error[%s].", err)
+			log.Flush()
+			panic(err)
+			//os.Exit(1)
+		}
+		//
+		log.Tracef("Get [%d] details records for the call with uniqueud [%s].",
+			len(callDetails), cdr.Uniqueid)
+		if callDetails != nil {
+			cdr.CallDetails = callDetails
+		}
+		//
+		if cdr.InoutStatus == DIRECTION_CALL_IN {
+			cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+		} else {
+			cdr.Dst = cdr.Dnid
+		}
+		//
 		err = importCdrToMongo(session, cdr)
 		var importedStatus = 1
 		if err != nil {
 			importedStatus = -1
 		}
 		//
-		log.Infof("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n", cdr.uniqueid, importedStatus)
-		err = udpateMySqlCdrImportStatus(db, cdr.uniqueid, importedStatus)
+		log.Infof("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",
+			cdr.Uniqueid, importedStatus)
+		err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, importedStatus)
 		if err != nil {
-			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.uniqueid)
+			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
 			os.Exit(1)
 		}
 	}
@@ -255,7 +287,7 @@ func main() {
 	//
 	now := time.Now()
 	_, timeZoneOffset := now.Zone()
-	log.Infof("Use the timezone offset used : %d.", timeZoneOffset)
+	log.Infof("Startring and using the timezone offset used : %d.", timeZoneOffset)
 	//
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -266,7 +298,7 @@ func main() {
 		os.Exit(1)
 	}()
 	//
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {

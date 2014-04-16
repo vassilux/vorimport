@@ -16,7 +16,23 @@
  { "name": "ringroups-custom-2", "direction": 2},
  { "name": "app-dial-secratary", "direction": 2},
  { "name": "app-dial-secratary", "direction": 2},
- { "name": "test-teletech-alarm-call", "direction": 1}
- 
+ { "name": "test-teletech-alarm-call", "direction": 1},
+ { "name": "incomming-calls-f1-playback", "direction": 2},
+ { "name": "app-custom-play-office-holiday", "direction": 2},
+ { "name": "inner-calls", "direction": 3},
+ { "name": "ringroups-custom-1", "direction": 2},
+ { "name": "ringroups-custom-2", "direction": 2},
+ { "name": "ringroups-custom-3", "direction": 2},
+ { "name": "DID_span_1", "direction": 2},
+ { "name": "DID_span_2", "direction": 2},
+ { "name": "DID_span_3", "direction": 2},
+ { "name": "DID_span_4", "direction": 2},
+ { "name": "DID_span_5", "direction": 2},
+ { "name": "DID_span_6", "direction": 2},
+ { "name": "CallingRule_0_national", "direction": 1},
+ { "name": "queues", "direction": 2},
+ { "name": "voicemenu-custom-1", "direction": 2},
+ { "name": "incomming-calls-for-recording", "direction": 2}
+  
  ]
 }

@@ -5,47 +5,49 @@ import (
 	log "github.com/cihub/seelog"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
+	"labix.org/v2/mgo/bson"
 	"time"
+	m "vorimport/models"
 )
 
-type Cdr struct {
-	calldate    time.Time
-	clid        string
-	src         string
-	dst         string
-	channel     string
-	dcontext    string
-	disposition string
-	billsec     int
-	duration    int
-	uniqueid    string
-	dstchannel  string
-	recordfile  string
-	waitAnswer  int64
-	inoutstatus int
-	causeStatus int
-}
+/*type CallDetail struct {
+	eventType string
+	eventTime time.Time
+	cidNum    string
+	cidDnid   string
+	exten     string
+	uniqueId  string
+	linkedId  string
+	peer      string
+}*/
 
-type Cel struct {
-	eventtime int64
-}
+//'CHAN_START'
 
 /**
  *
  */
-func getMysqlCdr(db mysql.Conn) (results []Cdr, err error) {
-	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel,recordfile from cdr WHERE import = 0 LIMIT 0, " + config.DbMySqlFetchRowNumber
+func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
+	log.Debugf("Enter into getMysqlCdr")
+	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
+	log.Debugf("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
+	//
 	if err != nil {
+		fmt.Printf("Executing request failed with error [%s]\r\n", err)
+		log.Debugf("Executing request [%s] and get error [%s] \r\n", myQuery, err)
 		return nil, err
 	}
+	//
+	fmt.Printf("Request executed and get [%d] rows\r\n", len(rows))
+	log.Debugf("Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
-	results = make([]Cdr, len(rows))
+	results = make([]m.RawCall, len(rows))
+	fmt.Printf("Create results  for [%d] rows\r\n", len(rows))
 	i := 0
 	for _, row := range rows {
 		//
-		var c Cdr
+		var c m.RawCall //Cdr
 		//mapping databases fields
 		calldate := res.Map("calldate")
 		clid := res.Map("clid")
@@ -57,33 +59,42 @@ func getMysqlCdr(db mysql.Conn) (results []Cdr, err error) {
 		billsec := res.Map("billsec")
 		duration := res.Map("duration")
 		uniqueid := res.Map("uniqueid")
-		dstchannel := res.Map("dstchannel")
+		dnid := res.Map("dnid")
 		recordfile := res.Map("recordfile")
+		dstchannel := res.Map("dstchannel")
 		//
-		c.calldate = time.Unix(row.Int64(calldate)+int64(timeZoneOffset), 0)
-		c.clid = row.Str(clid)
-		c.src = row.Str(src)
-		c.dst = row.Str(dst)
-		c.channel = row.Str(channel)
-		c.dcontext = row.Str(dcontext)
-		c.disposition = row.Str(disposition)
-		c.billsec = row.Int(billsec)
-		c.duration = row.Int(duration)
-		c.uniqueid = row.Str(uniqueid)
-		c.dstchannel = row.Str(dstchannel)
-		c.recordfile = row.Str(recordfile)
+		c = m.RawCall{Id: bson.NewObjectId(),
+			Calldate:       time.Unix(row.Int64(calldate)+int64(timeZoneOffset), 0),
+			MetadataDt:     time.Unix(time.Now().Unix()+int64(timeZoneOffset), 0),
+			ClidName:       row.Str(clid),
+			ClidNumber:     row.Str(clid),
+			Src:            row.Str(src),
+			Channel:        row.Str(channel),
+			Dcontext:       row.Str(dcontext),
+			DispositionStr: row.Str(disposition),
+			Disposition:    0,
+			AnswerWaitTime: 0,
+			Billsec:        row.Int(billsec),
+			Duration:       row.Int(duration),
+			Uniqueid:       row.Str(uniqueid),
+			InoutStatus:    0,
+			RecordFile:     row.Str(recordfile),
+			Dst:            row.Str(dst),
+			Dnid:           row.Str(dnid),
+			Dstchannel:     row.Str(dstchannel)}
 		//
 		results[i] = c
 		i++
 
 	}
-	return
+	fmt.Printf("Return [%d] results .\r\n", len(results))
+	return results, nil
 }
 
 /**
  * Process selection CEL events for given unique id
  */
-func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
+func getMySqlCel(db mysql.Conn, uniqueid string) (cel m.Cel, err error) {
 	myCelQuery := "select UNIX_TIMESTAMP(eventtime) as eventtime from cel where eventtype LIKE 'ANSWER' AND linkedid!=uniqueid AND linkedid=" + uniqueid
 	//
 	rows, res, err := db.Query(myCelQuery)
@@ -91,16 +102,64 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
 		return cel, err
 	}
 	if len(rows) > 0 {
-		log.Debugf("Get rows for uniqueid %d", uniqueid)
+		log.Tracef("Get rows for uniqueid [%s]", uniqueid)
 		row := rows[0]
 		eventtime := res.Map("eventtime")
-		cel.eventtime = row.Int64(eventtime)
+		cel.EventTime = row.Int64(eventtime)
 	} else {
-		log.Infof("Can't get rows for uniqueid %d.", uniqueid)
-		cel.eventtime = 0
+		log.Tracef("Can't get rows for uniqueid [%s].", uniqueid)
+		cel.EventTime = 0
 	}
 
-	return cel, err
+	return cel, nil
+}
+
+func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail, err error) {
+	myQuery := "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, uniqueid, linkedid, peer FROM  cel WHERE uniqueid =" + uniqueid + " OR linkedid = " + uniqueid
+	log.Tracef(" getMySqlCallDetails Executing request [%s]\r\n", myQuery)
+	rows, res, err := db.Query(myQuery)
+	//
+	if err != nil {
+		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", myQuery, err)
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	//
+	fmt.Printf("getMySqlCallDetails Request executed and get [%d] rows\r\n", len(rows))
+	//prepare results array
+	results = make([]m.CallDetail, len(rows))
+	log.Debugf("getMySqlCallDetails create results  for [%d] rows\r\n", len(rows))
+	i := 0
+	for _, row := range rows {
+		//
+		var c m.CallDetail
+		//mapping databases fields
+		eventtype := res.Map("eventtype")
+		eventtime := res.Map("eventtime")
+		cid_num := res.Map("cid_num")
+		cid_dnid := res.Map("cid_dnid")
+		exten := res.Map("exten")
+		uniqueid := res.Map("uniqueid")
+		linkedid := res.Map("linkedid")
+		peer := res.Map("peer")
+		//
+		c.EventType = row.Str(eventtype)
+		c.EventTime = time.Unix(row.Int64(eventtime)+int64(timeZoneOffset), 0)
+		c.CidNum = row.Str(cid_num)
+		c.CidDnid = row.Str(cid_dnid)
+		c.Exten = row.Str(exten)
+		c.UniqueId = row.Str(uniqueid)
+		c.LinkedId = row.Str(linkedid)
+		c.Peer = row.Str(peer)
+
+		results[i] = c
+		i++
+
+	}
+	log.Debugf("getMySqlCallDetails Return [%d] results .\r\n", len(results))
+	return results, nil
 }
 
 func udpateMySqlCdrImportStatus(db mysql.Conn, uniqueid string, status int) (err error) {
