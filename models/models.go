@@ -29,32 +29,32 @@ type Cel struct {
 
 type RawCall struct {
 	Id             bson.ObjectId `bson:"_id"`
-	Calldate       time.Time     `bson:"calldate"`
-	MetadataDt     time.Time     `bson:"metadataDt"`
-	ClidName       string        `bson:"clidName"`
-	ClidNumber     string        `bson:"clidNumber"`
+	Calldate       time.Time     `bson:"call_date"`
+	MetadataDt     time.Time     `bson:"metadata_date"`
+	ClidName       string        `bson:"clid_name"`
+	ClidNumber     string        `bson:"clid_number"`
 	Src            string        `bson:"src"`
 	Channel        string        `bson:"channel"`
 	Dcontext       string        `bson:"dcontext"`
-	DispositionStr string        `bson:"dispositionStr"`
+	DispositionStr string        `bson:"disposition_str"`
 	Disposition    int           `bson:"disposition"`
-	AnswerWaitTime int           `bson:"answerwaittime"`
+	AnswerWaitTime int           `bson:"answer_wait_time"`
 	Billsec        int           `bson:"billsec"`
 	Duration       int           `bson:"duration"`
-	Uniqueid       string        `bson:"uniqueid"`
-	InoutStatus    int           `bson:"inoutstatus"`
-	RecordFile     string        `bson:"recordfile"`
+	Uniqueid       string        `bson:"uniqueId"`
+	InoutStatus    int           `bson:"inout_status"`
+	RecordFile     string        `bson:"record_file"`
 	Dst            string        `bson:"dst"`
 	Dnid           string        `bson:"dnid"`
-	Dstchannel     string        `bson:"dstchannel"`
-	CallDetails    []CallDetail  `bson:"callDetails"`
+	Dstchannel     string        `bson:"dst_channel"`
+	CallDetails    []CallDetail  `bson:"call_details"`
 }
 
 type CallDetail struct {
-	EventType string    `bson:"eventType"`
-	EventTime time.Time `bson:"eventTime"`
-	CidNum    string    `bson:"cidNum"`
-	CidDnid   string    `bson:"cidDnid"`
+	EventType string    `bson:"event_type"`
+	EventTime time.Time `bson:"event_time"`
+	CidNum    string    `bson:"cid_num"`
+	CidDnid   string    `bson:"cid_dnid"`
 	Exten     string    `bson:"exten"`
 	UniqueId  string    `bson:"uniqueId"`
 	LinkedId  string    `bson:"linkedId"`
@@ -70,7 +70,7 @@ type MetaData struct {
 type DailyCall struct {
 	Id              string   `bson:"_id"`
 	Meta            MetaData `bson:"metadata"`
-	AnswereWaitTime int      `bson:"answere_wait_time"`
+	AnswereWaitTime int      `bson:"answer_wait_time"`
 	CallDaily       int      `bson:"call_daily"`
 	DurationDaily   int      `bson:"duration_daily"`
 }
@@ -78,7 +78,7 @@ type DailyCall struct {
 type MonthlyCall struct {
 	Id              string   `bson:"_id"`
 	Meta            MetaData `bson:"metadata"`
-	AnswereWaitTime int      `bson:"answere_wait_time"`
+	AnswereWaitTime int      `bson:"answer_wait_time"`
 	CallMonthly     int      `bson:"call_monthly"`
 	DurationMonthly int      `bson:"duration_monthly"`
 }

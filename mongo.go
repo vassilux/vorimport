@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ODIN_MONGO_DATABASENAME = "asterisk"
+	ODIN_MONGO_DATABASENAME = "revor"
 )
 
 //
@@ -59,7 +59,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
-			"answere_wait_time": cdr.AnswerWaitTime},
+			"answer_wait_time": cdr.AnswerWaitTime},
 		},
 		ReturnNew: false,
 	}
@@ -121,7 +121,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_daily": 1, "duration_daily": cdr.Billsec,
-			"answere_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
+			"answer_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
 	}
@@ -165,7 +165,7 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 	//
 	var collectionName = ""
 	var user = cdr.Dnid
-	collectionName = "monthlydid__incomming"
+	collectionName = "monthlydid_incomming"
 	//
 	var id = fmt.Sprintf("%04d%02d-%s-%d", cdr.Calldate.Year(),
 		cdr.Calldate.Month(), user, cdr.Disposition)
@@ -182,7 +182,7 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
-			"answere_wait_time": cdr.AnswerWaitTime},
+			"answer_wait_time": cdr.AnswerWaitTime},
 		},
 		ReturnNew: false,
 	}
@@ -237,7 +237,7 @@ func processDidDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_daily": 1, "duration_daily": cdr.Billsec,
-			"answere_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
+			"answer_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
 	}
