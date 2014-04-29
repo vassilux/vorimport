@@ -62,7 +62,7 @@ type CallDetail struct {
 }
 
 type MetaData struct {
-	User        string    `bson:"user"`
+	Dst         string    `bson:"dst"`
 	Dt          time.Time `bson:"dt"`
 	Disposition int       `bson:"disposition"`
 }
