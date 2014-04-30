@@ -46,8 +46,9 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	//
 	var id = fmt.Sprintf("%04d%02d-%s-%d", cdr.Calldate.Year(),
 		cdr.Calldate.Month(), dst, cdr.Disposition)
+	//
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(),
-		cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
+		1, 1, 0, 0, 0, time.UTC)
 	//
 	log.Debugf("Import monthly analytics :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
@@ -71,14 +72,14 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 		log.Debugf("Monthly update can't be executed , get the error: [ %v], Try execute insert.", err)
 		err = collection.Insert(doc)
 		if err != nil {
-			log.Error("[mongo] Monthly insert failed with error : [%v].", err)
+			log.Error("Monthly insert failed with error : [%v].", err)
 			return err
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debugf("[mongo] New record inserted : %s.", doc.Id)
+			log.Debugf("Monthly analytics wew record inserted : %s.", doc.Id)
 		} else {
-			log.Debugf("New record inserted : %s.", doc.Id)
+			log.Errorf("Monthly analytics can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
 		}
 	} else {
 		if err != nil {
@@ -169,13 +170,17 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 	//
 	var id = fmt.Sprintf("%04d%02d-%s-%d", cdr.Calldate.Year(),
 		cdr.Calldate.Month(), dst, cdr.Disposition)
+	//
+	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(),
+		1, 1, 0, 0, 0, time.UTC)
+	//
 	log.Debugf("Import monthly did :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
-	metaDoc := m.MetaData{Dst: dst, Disposition: cdr.Disposition}
+	metaDoc := m.MetaData{Dst: dst, Disposition: cdr.Disposition, Dt: metaDate}
 	doc := m.MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
 		CallMonthly: 0, DurationMonthly: 0}
 	//
-	var selector = bson.M{"_id": id}
+	var selector = bson.M{"_id": id, "metadata": metaDoc}
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
@@ -196,9 +201,9 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debugf("[did] New record inserted : %s.", doc.Id)
+			log.Debugf("Monthly did new record inserted : %s.", doc.Id)
 		} else {
-			log.Debugf("New record inserted : %s.", doc.Id)
+			log.Errorf("Monthly did can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
 		}
 	} else {
 		if err != nil {
