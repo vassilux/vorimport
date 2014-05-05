@@ -7,7 +7,7 @@
  "mongoHost": "127.0.0.1",
  "dialplanContext":  [
  { "name": "app-out", "direction": 1},
- { "name": "DLPN_DialPlan1", "direction": 1},
+ { "name": "DLPN_DialPlan1", "direction": 2},
  { "name": "app-daynight-toggle", "direction": 3},
  { "name": "test-dnd", "direction": 3},
  { "name": "test-incall-for-kebab", "direction": 1},

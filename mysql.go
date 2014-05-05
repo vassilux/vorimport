@@ -6,6 +6,7 @@ import (
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
 	"labix.org/v2/mgo/bson"
+	"strings"
 	"time"
 	m "vorimport/models"
 )
@@ -115,18 +116,48 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel m.Cel, err error) {
 }
 
 func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail, err error) {
-	myQuery := "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, uniqueid, linkedid, peer FROM  cel WHERE uniqueid =" + uniqueid + " OR linkedid = " + uniqueid
-	log.Tracef(" getMySqlCallDetails Executing request [%s]\r\n", myQuery)
-	rows, res, err := db.Query(myQuery)
+	var sqlBase = "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, context, peer, uniqueid, linkedid  FROM  cel WHERE "
+	var sqlOrder = " order by eventtime, id"
+	//
+	var sqlStart = sqlBase + "uniqueid = " + uniqueid + " OR linkedid = " + uniqueid + sqlOrder
+	//
+	/*myQuery := "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, context, peer, uniqueid, linkedid  FROM  cel WHERE uniqueid =" +
+	uniqueid + " OR linkedid = " + uniqueid + " order by eventtime, id"*/
+	log.Tracef(" getMySqlCallDetails Executing request [%s]\r\n", sqlStart)
+	rows, res, err := db.Query(sqlStart)
 	//
 	if err != nil {
-		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", myQuery, err)
+		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlStart, err)
 		return nil, err
 	}
 	if len(rows) == 0 {
 		return nil, nil
 	}
 	//
+	var searchIdMap = make(map[string]string)
+	for _, row := range rows {
+		uniqueid := res.Map("uniqueid")
+		linkedid := res.Map("linkedid")
+		searchIdMap[row.Str(uniqueid)] = row.Str(uniqueid)
+		searchIdMap[row.Str(linkedid)] = row.Str(linkedid)
+
+	}
+	var keys []string
+	for k := range searchIdMap {
+		keys = append(keys, k)
+	}
+	var strIds = strings.Join(keys, ",")
+
+	var sqlNext = sqlBase + "uniqueid IN (" + strIds + ") OR linkedid IN (" + strIds + ")" + sqlOrder
+	//
+	rows, res, err = db.Query(sqlNext)
+	if err != nil {
+		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, err)
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
 	fmt.Printf("getMySqlCallDetails Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
 	results = make([]m.CallDetail, len(rows))
@@ -143,6 +174,7 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail
 		exten := res.Map("exten")
 		uniqueid := res.Map("uniqueid")
 		linkedid := res.Map("linkedid")
+		context := res.Map("context")
 		peer := res.Map("peer")
 		//
 		c.EventType = row.Str(eventtype)
@@ -153,6 +185,7 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail
 		c.UniqueId = row.Str(uniqueid)
 		c.LinkedId = row.Str(linkedid)
 		c.Peer = row.Str(peer)
+		c.Context = row.Str(context)
 
 		results[i] = c
 		i++

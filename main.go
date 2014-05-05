@@ -244,7 +244,23 @@ func importJob() {
 		}
 		//
 		if cdr.InoutStatus == DIRECTION_CALL_IN {
-			cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+			var extent = ""
+			for i := range cdr.CallDetails {
+				var callDetail = cdr.CallDetails[i]
+				if callDetail.EventType == "BRIDGE_END" {
+					//idea to find the last BRIDGE_END event and get the extention from it
+					extent = getPeerFromChannel(callDetail.Peer)
+					log.Tracef("Get extent [%s] for peer [%s].",
+						extent, callDetail.Peer)
+					//break
+				}
+			}
+			if extent != "" {
+				cdr.Dst = extent
+			} else {
+				cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+			}
+
 		} else {
 			cdr.Dst = cdr.Dnid
 		}

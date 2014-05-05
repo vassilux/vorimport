@@ -58,6 +58,7 @@ type CallDetail struct {
 	Exten     string    `bson:"exten"`
 	UniqueId  string    `bson:"uniqueId"`
 	LinkedId  string    `bson:"linkedId"`
+	Context   string    `bson:"context"`
 	Peer      string    `bson:"peer"`
 }
 
