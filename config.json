@@ -32,7 +32,9 @@
  { "name": "CallingRule_0_national", "direction": 1},
  { "name": "queues", "direction": 2},
  { "name": "voicemenu-custom-1", "direction": 2},
- { "name": "incomming-calls-for-recording", "direction": 2}
+ { "name": "incomming-calls-for-recording", "direction": 2},
+ { "name": "incomming-calls-f1com", "direction": 1}
+
   
  ]
 }
