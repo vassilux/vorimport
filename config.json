@@ -33,7 +33,9 @@
  { "name": "queues", "direction": 2},
  { "name": "voicemenu-custom-1", "direction": 2},
  { "name": "incomming-calls-for-recording", "direction": 2},
- { "name": "incomming-calls-f1com", "direction": 1}
+ { "name": "incomming-calls-f1com", "direction": 1},
+ { "name": "from-g200be", "direction": 2},
+ { "name": "to-g200be", "direction": 1}
 
   
  ]
