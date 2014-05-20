@@ -38,7 +38,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 		collectionName = "monthlyanalytics_outgoing"
 		dst = cdr.Src
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
-		collectionName = "monthlyanalytics__incomming"
+		collectionName = "monthlyanalytics_incomming"
 		dst = cdr.Dst
 	} else {
 		return errors.New("Can't detect the call context")
