@@ -35,8 +35,8 @@
  { "name": "incomming-calls-for-recording", "direction": 2},
  { "name": "incomming-calls-f1com", "direction": 1},
  { "name": "from-g200be", "direction": 2},
- { "name": "to-g200be", "direction": 1}
-
+ { "name": "to-g200be", "direction": 1},
+ { "name": "asterisk_guitools", "direction": 3}
   
  ]
 }
