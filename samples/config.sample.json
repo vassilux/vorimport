@@ -1,0 +1,13 @@
+{
+ "dbMySqlHost": "127.0.0.1:3306",
+ "dbMySqlUser": "asterisk",
+ "dbMySqlPassword": "asterisk",
+ "dbMySqlName": "asteriskcdrdb",
+ "dbMySqlFetchRowNumber": "81",
+ "mongoHost": "127.0.0.1",
+ "dialplanContext":  [
+ { "name": "app-out", "direction": 1},
+ { "name": "DLPN_DialPlan1", "direction": 2},
+ { "name": "app-daynight-toggle", "direction": 3},
+ ]
+}
