@@ -13,7 +13,7 @@ Ce placer dans le repertoire : cd /opt/vorimport/vorimport_[version]
 >
 > - En cas d'une nouvelle installation copier le ficheir vorimport.supervisor.conf dans le répertoire /etc/supervisor/conf.d
 >
-> - Copier le fichier /opt/vorimport/vorimport_[version]/samples/config.sample.json dans /opt/vorimport/vorimport_[version]/config.json
+> - Copier le fichier /opt/vorimport/vorimport_[version]/config.sample.json dans /opt/vorimport/vorimport_[version]/config.json
 > - Addapter ce fichier en cas de besoin à votre environement cible
 
 
@@ -32,7 +32,8 @@ Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les
 
 
 ### Mise à jour 
-
+Mise à jour est identique à l'installation sans la partie de la configuration.
+Il faut copier le ficheir de la configuration actuel dans  le nouveau repertoire configuration 
 
 
 
