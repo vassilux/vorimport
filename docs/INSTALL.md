@@ -33,7 +33,8 @@ Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les
 
 ### Mise à jour 
 Mise à jour est identique à l'installation sans la partie de la configuration.
-Il faut copier le ficheir de la configuration actuel dans  le nouveau repertoire configuration 
+
+Il faut copier le ficheir de la configuration actuel (/opt/vorimport/current/config.json) dans le repertoire /opt/vorimport/vorimport_[version] 
 
 
 
