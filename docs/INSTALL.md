@@ -1,0 +1,40 @@
+----------
+vorimport 
+----------
+
+ 
+### Installation 
+Copier le ficheir vorimport_[version].tar.gz sur la machine cible dans le repertoire /opt/vorimport
+Exécuter tar xvzf vorimport_[version].tar.gz
+
+Ce placer dans le repertoire : cd /opt/vorimport/vorimport_[version]
+
+> **NOTE:**
+>
+> - En cas d'une nouvelle installation copier le ficheir vorimport.supervisor.conf dans le répertoire /etc/supervisor/conf.d
+>
+> - Copier le fichier /opt/vorimport/vorimport_[version]/samples/config.sample.json dans /opt/vorimport/vorimport_[version]/config.json
+> - Addapter ce fichier en cas de besoin à votre environement cible
+
+
+Vérifier si l'application est en cours d'execution via console de supervisor : supervisorctl
+Si l'application est en court d'exécution arrêter l'application : stop vorimport
+Quitter le console : exit
+
+Crée un lien symbolic ls -s /opt/vorimport/current /opt/revor/vorimport_[version]
+> **NOTE:**
+>
+> - En cas si le répertoire existe /opt/vorimport/current. Supprimer rm -rf /opt/vorimport/current
+
+### Configuraiton
+Copier le fichier config.sample.json en config.json : cp config.sample.json config.json
+Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les besoin du client.
+
+
+### Mise à jour 
+
+
+
+
+
+
