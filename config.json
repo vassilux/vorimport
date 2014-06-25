@@ -1,5 +1,5 @@
 {
- "dbMySqlHost": "127.0.0.1:3306",
+ "dbMySqlHost": "192.168.3.20:3306",
  "dbMySqlUser": "root",
  "dbMySqlPassword": "lepanos",
  "dbMySqlName": "asteriskcdrdb",
@@ -36,7 +36,8 @@
  { "name": "incomming-calls-f1com", "direction": 1},
  { "name": "from-g200be", "direction": 2},
  { "name": "to-g200be", "direction": 1},
- { "name": "asterisk_guitools", "direction": 3}
+ { "name": "asterisk_guitools", "direction": 3},
+ { "name": "simulate-outcall", "direction": 3}
   
  ]
 }
