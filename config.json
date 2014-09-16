@@ -7,6 +7,7 @@
  "mongoHost": "127.0.0.1",
  "dialplanContext":  [
  { "name": "app-out", "direction": 1},
+  { "name": "incomming", "direction": 2},
  { "name": "DLPN_DialPlan1", "direction": 2},
  { "name": "app-daynight-toggle", "direction": 3},
  { "name": "test-dnd", "direction": 3},
@@ -37,7 +38,19 @@
  { "name": "from-g200be", "direction": 2},
  { "name": "to-g200be", "direction": 1},
  { "name": "asterisk_guitools", "direction": 3},
- { "name": "simulate-outcall", "direction": 3}
-  
+ { "name": "simulate-outcall", "direction": 3},
+ { "name": "test-teletech-alive-call", "direction": 1},
+ { "name": "voicemenu-custom-2", "direction": 2},
+{ "name": "voicemenu-custom-1", "direction": 2},
+{ "name": "conferences", "direction": 2},
+{ "name": "appc-esi-conference", "direction": 3},
+{ "name": "app-recorde-prompt", "direction": 3},
+{ "name": "appc-esi-conference-room-choise", "direction": 3}
+
+
+
+
+
+
  ]
 }
