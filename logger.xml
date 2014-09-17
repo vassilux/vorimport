@@ -1,23 +1,22 @@
-<seelog type="adaptive" mininterval="200000000" maxinterval="1000000000" critmsgcount="5" minlevel="trace">
-	<outputs formatid="msg">
-        <filter levels="trace">
-            <!--<file path="./log/vorimport_traces.log"/>-->
-			<console />
-        </filter>
-        <filter levels="debug">
-        	<!--<file path="./log/vorimport_debug.log"/> -->
-            <console />
-        </filter>
+<seelog type="adaptive" mininterval="2000000" maxinterval="100000000" critmsgcount="500" minlevel="info">
+    <exceptions>
+        <exception filepattern="test*" minlevel="error"/>
+    </exceptions>
+    <outputs formatid="all">
+        <file path="./log/all.log"/>
         <filter levels="info">
-        	<!--<file path="./log/vorimport_info.log"/>-->
-            <console />
+          <console formatid="fmtinfo"/>
+		  <file path="./log/infos.log"/>
         </filter>
-        <filter levels="error">
-        	<!--<file path="./log/vorimport_error.log"/>-->
-            <console />
-        </filter>      
+        <filter levels="error,critical" formatid="fmterror">
+          <console/>
+          <file path="./log/errors.log"/>
+        </filter>
     </outputs>
     <formats>
-        <format id="msg" format="%Time: %Msg%n"/>
+        <format id="fmtinfo" format="[%Level] [%Time] %Msg%n"/>
+        <format id="fmterror" format="[%LEVEL] [%Time] [%FuncShort @ %File.%Line] %Msg%n"/>
+        <format id="all" format="[%Level] [%Time] [@ %File.%Line] %Msg%n"/>
+        <format id="criticalemail" format="Critical error on our server!\n    %Time %Date %RelFile %Func %Msg \nSent by Seelog"/>
     </formats>
 </seelog>

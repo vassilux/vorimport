@@ -1,5 +1,5 @@
 {
- "dbMySqlHost": "192.168.3.20:3306",
+ "dbMySqlHost": "127.0.0.1:3306",
  "dbMySqlUser": "root",
  "dbMySqlPassword": "lepanos",
  "dbMySqlName": "asteriskcdrdb",
@@ -7,7 +7,8 @@
  "mongoHost": "127.0.0.1",
  "dialplanContext":  [
  { "name": "app-out", "direction": 1},
-  { "name": "incomming", "direction": 2},
+ { "name": "incomming", "direction": 2},
+ { "name": "outgoing", "direction": 1},
  { "name": "DLPN_DialPlan1", "direction": 2},
  { "name": "app-daynight-toggle", "direction": 3},
  { "name": "test-dnd", "direction": 3},

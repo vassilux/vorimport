@@ -11,40 +11,31 @@ import (
 	m "vorimport/models"
 )
 
-/*type CallDetail struct {
-	eventType string
-	eventTime time.Time
-	cidNum    string
-	cidDnid   string
-	exten     string
-	uniqueId  string
-	linkedId  string
-	peer      string
-}*/
-
-//'CHAN_START'
+/**
+ * Used for split clid into two string caller name and caller number
+ */
+func bracket(r rune) bool {
+	return r == '<' || r == '>'
+}
 
 /**
  *
  */
 func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
-	log.Debugf("Enter into getMysqlCdr")
+	log.Tracef("Enter into getMysqlCdr")
 	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
-	log.Debugf("Executing request [%s]\r\n", myQuery)
+	log.Tracef("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
 	//
 	if err != nil {
-		fmt.Printf("Executing request failed with error [%s]\r\n", err)
 		log.Debugf("Executing request [%s] and get error [%s] \r\n", myQuery, err)
 		return nil, err
 	}
 	//
-	fmt.Printf("Request executed and get [%d] rows\r\n", len(rows))
-	log.Debugf("Request executed and get [%d] rows\r\n", len(rows))
+	log.Tracef("Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
 	results = make([]m.RawCall, len(rows))
-	fmt.Printf("Create results  for [%d] rows\r\n", len(rows))
 	i := 0
 	for _, row := range rows {
 		//
@@ -64,11 +55,30 @@ func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
 		recordfile := res.Map("recordfile")
 		dstchannel := res.Map("dstchannel")
 		//
+		raw_clid := strings.FieldsFunc(row.Str(clid), bracket)
+		caller_name := ""
+		caller_number := ""
+
+		if len(raw_clid) == 2 {
+			caller_name = raw_clid[0]
+			caller_number = raw_clid[1]
+		} else if len(raw_clid) == 1 {
+			caller_number = raw_clid[0]
+		}
+
+		/*if len(raw_clid) == 2 {
+			caller_name := raw_clid[0]
+			caller_number := raw_clid[1]
+
+		}else len(raw_clid) == 1 {
+			caller_number := raw_clid[0]
+		}*/
+		//
 		c = m.RawCall{Id: bson.NewObjectId(),
 			Calldate:       time.Unix(row.Int64(calldate)+int64(timeZoneOffset), 0),
 			MetadataDt:     time.Unix(time.Now().Unix()+int64(timeZoneOffset), 0),
-			ClidName:       row.Str(clid),
-			ClidNumber:     row.Str(clid),
+			ClidName:       caller_name,
+			ClidNumber:     caller_number,
 			Src:            row.Str(src),
 			Channel:        row.Str(channel),
 			Dcontext:       row.Str(dcontext),
@@ -88,7 +98,6 @@ func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
 		i++
 
 	}
-	fmt.Printf("Return [%d] results .\r\n", len(results))
 	return results, nil
 }
 
@@ -158,7 +167,6 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail
 	if len(rows) == 0 {
 		return nil, nil
 	}
-	fmt.Printf("getMySqlCallDetails Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
 	results = make([]m.CallDetail, len(rows))
 	log.Debugf("getMySqlCallDetails create results  for [%d] rows\r\n", len(rows))

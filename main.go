@@ -34,9 +34,10 @@ type Config struct {
 }
 
 var (
-	config         *Config
-	configLock     = new(sync.RWMutex)
-	timeZoneOffset int64
+	config             *Config
+	configLock         = new(sync.RWMutex)
+	timeZoneOffset     int64
+	isImportProcessing bool
 )
 
 const (
@@ -103,6 +104,19 @@ func loadConfig(fail bool) {
 	configLock.Unlock()
 }
 
+func loadLogger() {
+	logger, err := log.LoggerFromConfigAsFile("logger.xml")
+
+	if err != nil {
+		log.Error("Can not load the logger configuration file, Please check if the file logger.xml exists on current directory", err)
+		os.Exit(1)
+	} else {
+		log.ReplaceLogger(logger)
+		logger.Flush()
+	}
+
+}
+
 func GetConfig() *Config {
 	configLock.RLock()
 	defer configLock.RUnlock()
@@ -112,20 +126,15 @@ func GetConfig() *Config {
 func init() {
 	//called on the start by go
 	loadConfig(true)
-	logger, err := log.LoggerFromConfigAsFile("logger.xml")
+	loadLogger()
 
-	if err != nil {
-		fmt.Printf("Can not load the logger configuration file, Please check if the file logger.xml exists on current directory", err)
-	}
-
-	log.ReplaceLogger(logger)
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGUSR2)
 	go func() {
 		for {
 			<-s
 			loadConfig(false)
-			log.Error("Configuration reloading")
+			log.Info("Configuration reloading")
 		}
 	}()
 }
@@ -200,7 +209,7 @@ func importJob() {
 	var outgoingCount = 0
 	for _, cdr := range cdrs {
 		var datetime = cdr.Calldate.Format(time.RFC3339)
-		log.Debugf("Get raw cdr for the date [%s], the clid [%s] and the context [%s]", datetime, cdr.ClidNumber, cdr.Dcontext)
+		log.Tracef("Get raw cdr for the date [%s], the clid [%s] and the context [%s]", datetime, cdr.ClidNumber, cdr.Dcontext)
 		var cel m.Cel
 		cel, err = getMySqlCel(db, cdr.Uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)
@@ -258,7 +267,8 @@ func importJob() {
 			if extent != "" {
 				cdr.Dst = extent
 			} else {
-				cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+				//must be checked cause by testing
+				cdr.Dst = cdr.Dst //getPeerFromChannel(cdr.Dstchannel)
 			}
 
 		} else {
@@ -271,7 +281,7 @@ func importJob() {
 			importedStatus = -1
 		}
 		//
-		log.Infof("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",
+		log.Debugf("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",
 			cdr.Uniqueid, importedStatus)
 		err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, importedStatus)
 		if err != nil {
@@ -290,7 +300,7 @@ func importJob() {
 	if outgoingCount > 0 {
 		syncPublish(spec, channel, "cdroutgoing")
 	}
-
+	//
 }
 
 func cleanup() {
@@ -299,7 +309,10 @@ func cleanup() {
 
 func main() {
 	//
+
 	config = GetConfig()
+	//
+	isImportProcessing = false
 	//
 	now := time.Now()
 	_, timeZoneOffset := now.Zone()
@@ -320,7 +333,12 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				importJob()
+				if isImportProcessing == false {
+					isImportProcessing = true
+					importJob()
+					isImportProcessing = false
+				}
+
 			case <-quit:
 				ticker.Stop()
 				return

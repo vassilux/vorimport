@@ -77,7 +77,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debugf("Monthly analytics wew record inserted : %s.", doc.Id)
+			log.Tracef("Monthly analytics wew record inserted : %s.", doc.Id)
 		} else {
 			log.Errorf("Monthly analytics can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
 		}
@@ -106,7 +106,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	} else {
 		return errors.New("[mongo] Can't detect the call context")
 	}
-	//var t = time.Unix(cdr.calldate, 0)
+	//
 	var id = fmt.Sprintf("%04d%02d%02d-%s-%d", cdr.Calldate.Year(), cdr.Calldate.Month(),
 		cdr.Calldate.Day(), dst, cdr.Disposition)
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
@@ -115,7 +115,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	metaDoc := m.MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
 	doc := m.DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
 		DurationDaily: 0}
-	//err = collection.Insert(doc)
+	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
 	var hourlyInc = fmt.Sprintf("call_hourly.%d", cdr.Calldate.Hour())
 	var durationHourlyInc = fmt.Sprintf("duration_hourly.%d", cdr.Calldate.Hour())
@@ -152,7 +152,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 
 //
 func processDidImport(session *mgo.Session, cdr m.RawCall) (err error) {
-	log.Debugf("Import by did : %s\n", cdr.Dnid)
+	log.Tracef("Import by did : %s\n", cdr.Dnid)
 	err = processDidDailyAnalytics(session, cdr)
 	if err != nil {
 		return nil
@@ -268,7 +268,7 @@ func processDidDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 }
 
 func importCdrToMongo(session *mgo.Session, cdr m.RawCall) (err error) {
-	log.Debugf("Start analyze data for mongo database.")
+	log.Tracef("Start analyze data for mongo database.")
 	createMongoCdr(session, cdr)
 	err = processDailyAnalytics(session, cdr)
 	if err != nil {
