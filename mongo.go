@@ -8,15 +8,19 @@ import (
 	"labix.org/v2/mgo/bson"
 	"os"
 	"time"
-	m "vorimport/models"
+	//m "vorimport/models"
 )
+
+type TestDummy struct {
+	FirstName string
+}
 
 const (
 	ODIN_MONGO_DATABASENAME = "revor"
 )
 
 //
-func createMongoCdr(session *mgo.Session, cdr m.RawCall) (err error) {
+func createMongoCdr(session *mgo.Session, cdr RawCall) (err error) {
 	collection := session.DB(ODIN_MONGO_DATABASENAME).C("cdrs")
 	//
 	err = collection.Insert(cdr)
@@ -30,7 +34,7 @@ func createMongoCdr(session *mgo.Session, cdr m.RawCall) (err error) {
 }
 
 //
-func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
+func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
 	var dst = ""
@@ -52,8 +56,8 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	//
 	log.Debugf("Import monthly analytics :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
-	metaDoc := m.MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
-	doc := m.MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
+	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
+	doc := MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
 		CallMonthly: 0, DurationMonthly: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
@@ -93,7 +97,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	return nil
 }
 
-func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
+func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
 	var dst = ""
@@ -112,8 +116,8 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
 	log.Debugf("Import daily analytics :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
-	metaDoc := m.MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
-	doc := m.DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
+	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
+	doc := DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
 		DurationDaily: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
@@ -139,7 +143,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 		}
 		info, err = collection.Find(selector).Apply(change, &doc)
 		if info != nil {
-			log.Debugf("Daily document updated with success for the document : %s", doc.Id)
+			log.Debugf("Daily docCallsHourlyument updated with success for the document : %s", doc.Id)
 		} else {
 			log.Debugf("Daily document can't be updated, get the error : [%v] for the document : %s", err, doc.Id)
 		}
@@ -151,7 +155,7 @@ func processDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 }
 
 //
-func processDidImport(session *mgo.Session, cdr m.RawCall) (err error) {
+func processDidImport(session *mgo.Session, cdr RawCall) (err error) {
 	log.Tracef("Import by did : %s\n", cdr.Dnid)
 	err = processDidDailyAnalytics(session, cdr)
 	if err != nil {
@@ -162,7 +166,7 @@ func processDidImport(session *mgo.Session, cdr m.RawCall) (err error) {
 }
 
 //
-func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
+func processDidMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
 	var dst = cdr.Dnid
@@ -176,8 +180,8 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 	//
 	log.Debugf("Import monthly did :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
-	metaDoc := m.MetaData{Dst: dst, Disposition: cdr.Disposition, Dt: metaDate}
-	doc := m.MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
+	metaDoc := MetaData{Dst: dst, Disposition: cdr.Disposition, Dt: metaDate}
+	doc := MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
 		CallMonthly: 0, DurationMonthly: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
@@ -218,20 +222,33 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr m.RawCall) (err error)
 }
 
 //
-func processDidDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
+func processDidDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
 	var dst = cdr.Dnid
 	collectionName = "dailydid_incomming"
 	//
+	/*
+		callsHourly := CallsByHours{}
+		callsHourly.H0 = 0
+		callsHourly.H1 = 0
+		callsHourly.H2 = 0
+		callsHourly.H3 = 0
+		callsHourly.H4 = 0
+		callsHourly.H5 = 0
+		callsHourly.H6 = 0
+		callsHourly.H7 = 0*/
+
 	var id = fmt.Sprintf("%04d%02d%02d-%s-%d", cdr.Calldate.Year(), cdr.Calldate.Month(),
 		cdr.Calldate.Day(), dst, cdr.Disposition)
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
 	log.Debugf("Import daily did :  %s for the id %s.", collectionName, id)
 	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
-	metaDoc := m.MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
-	doc := m.DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
+	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
+
+	doc := DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
 		DurationDaily: 0}
+
 	//err = collection.Insert(doc)
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
 	var hourlyInc = fmt.Sprintf("call_hourly.%d", cdr.Calldate.Hour())
@@ -267,7 +284,7 @@ func processDidDailyAnalytics(session *mgo.Session, cdr m.RawCall) (err error) {
 	return nil
 }
 
-func importCdrToMongo(session *mgo.Session, cdr m.RawCall) (err error) {
+func importCdrToMongo(session *mgo.Session, cdr RawCall) (err error) {
 	log.Tracef("Start analyze data for mongo database.")
 	createMongoCdr(session, cdr)
 	err = processDailyAnalytics(session, cdr)

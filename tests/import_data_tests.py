@@ -58,6 +58,21 @@ incall_default_dnid = """\
 8400
 """.split()
 
+outcall_default_clids = """\
+Isabelle<6005>
+Marina<6006>
+Natasha<6000>
+6666
+""".split()
+
+outcall_default_dst = """\
+0493941157
+007898989898989
+0493948400
+""".split()
+
+
+
 hangupcause_causes = """\
 ANSWERED
 BUSY
@@ -75,21 +90,6 @@ MAX_INCALLS_NUMBER = 0
 
 MAX_OUTCALLS_NUMBER = 0
 
-#
-'''
-class ClidNameGenerator(object):
-    def __init__(self, names=incalls_default_clids):
-        self._names =  names #{i : name.strip() for i, name in enumerate(names)}
-        self._total_names = len(self._names)
-        self._used_indices = set()
-    def __call__(self):
-        index = random.randrange(self._total_names)
-        name = self._names[index]
-        return name
-    def __iter__(self):
-        while True:
-            yield self()
-'''
 #
 char_set_uniqueid = string.digits
 
@@ -130,7 +130,6 @@ def generate_incomming():
     	if incall_hangup_cause != "ANSWERED":
     		billsec = 0
 
-    	#print "Incall clid %s %s "%(incall_clid, timestamp)
     	query="INSERT INTO asteriskcdrdb.cdr (calldate, clid, src, dst, channel, dcontext, disposition, \
 billsec, duration,uniqueid,dstchannel, dnid, recordfile, import) \
 VALUES(from_unixtime(%s),'%s', '%s', '%s', '%s', 'incomming', '%s', '%s','%s', '%s', 'SIP/%s', '%s', NULL, 0)" % \
@@ -139,12 +138,45 @@ VALUES(from_unixtime(%s),'%s', '%s', '%s', '%s', 'incomming', '%s', '%s','%s', '
     	cursor.execute(query)
 
 def generate_outgoing():
-	query="INSERT INTO asteriskcdrdb.cdr (calldate, clid, src, dst, channel, dcontext, disposition,billsec,\
-		duration,uniqueid,dstchannel, dnid, recordfile, import) VALUES(now(),'%s', '%s', '%s', 'DAHDI/i5/551234578-1', \
-		'outgoing', 'ANSWERED', '5','1', '139412787.59', '%s', '%s', NULL, 0)" % \
-		(outcall_clid, outcall_src, outcall_dst, outcall_dst, outcall_dnid)
-	
-	cursor.execute(query)
+	#
+	for clid in incalls_default_clids:
+		uniqueid = ''.join(random.sample(char_set_uniqueid*12, 12))
+		outcall_clid = random.choice(outcall_default_clids)
+		outcall_dst = random.choice(outcall_default_dst)
+		outcall_dnid = outcall_dst
+		outcall_hangup_cause = random.choice(hangupcause_causes)
+		#
+		outcall_src = ""
+
+		if outcall_src == "none":
+			outcall_src = ""
+		else:
+			tokens = outcall_clid.split('<')
+			if(len(tokens) == 2):
+				outcall_src = tokens[1].replace(">", "")
+			else:
+				outcall_src = tokens[0]
+			
+
+		channel = "SIP/%s-1" %(outcall_src)
+		dchannel = "DAHDI/i5/%s-1" %(outcall_dst)
+
+		duration = random.randint(1, 300)
+		billsec = duration - random.randint(1, 10)
+		#callername = "%s%d" % (it_name, count_contact)
+		#hangupcause_id = random.randint(15, 17)
+    	timestamp = int(str(time.time()).split('.')[0])
+    	timestamp = timestamp - random.randint(1, 86400)
+
+    	if outcall_hangup_cause != "ANSWERED":
+    		billsec = 0
+
+    	query="INSERT INTO asteriskcdrdb.cdr (calldate, clid, src, dst, channel, dcontext, disposition, \
+    	billsec, duration,uniqueid,dstchannel, dnid, recordfile, import) \
+    	VALUES(from_unixtime(%s),'%s', '%s', '%s', '%s', 'outgoing', '%s', '%s','%s', '%s', '%s', '%s', NULL, 0)" % \
+    	(timestamp,outcall_clid, outcall_src, outcall_dst, channel, outcall_hangup_cause, billsec, duration, uniqueid, dchannel, outcall_dnid)
+
+    	cursor.execute(query)
 
 def invoke_incall_generator():
 	go = True
@@ -154,6 +186,16 @@ def invoke_incall_generator():
 		generate_incomming()
 		i = i + 1
 		if i>= MAX_INCALLS_NUMBER:
+			go = False
+
+def invoke_outcall_generator():
+	go = True
+	i=0
+	while go:
+		#print " i %d" %(i)
+		generate_outgoing()
+		i = i + 1
+		if i>= MAX_OUTCALLS_NUMBER:
 			go = False
 
 def main():
@@ -177,6 +219,11 @@ def main():
 	if MAX_INCALLS_NUMBER > 0:
 		print " MAX_INCALLS_NUMBER %s"%(MAX_INCALLS_NUMBER)
 		invoke_incall_generator()
+
+	if MAX_OUTCALLS_NUMBER > 0:
+		print "MAX_OUTCALLS_NUMBER %s"%(MAX_OUTCALLS_NUMBER)
+		invoke_outcall_generator()
+
 
 if __name__ == '__main__':
 	main()

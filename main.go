@@ -15,7 +15,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	m "vorimport/models"
+	//m "vorimport/models"
 )
 
 type Context struct {
@@ -139,7 +139,7 @@ func init() {
 	}()
 }
 
-func getInOutStatus(cdr m.RawCall) (status int, err error) {
+func getInOutStatus(cdr RawCall) (status int, err error) {
 	config = GetConfig()
 	log.Tracef("Enter into getInOutStatus")
 	for i := range config.DialplanContext {
@@ -210,7 +210,7 @@ func importJob() {
 	for _, cdr := range cdrs {
 		var datetime = cdr.Calldate.Format(time.RFC3339)
 		log.Tracef("Get raw cdr for the date [%s], the clid [%s] and the context [%s]", datetime, cdr.ClidNumber, cdr.Dcontext)
-		var cel m.Cel
+		var cel Cel
 		cel, err = getMySqlCel(db, cdr.Uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)
 		if err != nil {

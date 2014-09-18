@@ -8,7 +8,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"strings"
 	"time"
-	m "vorimport/models"
+	//m "vorimport/models"
 )
 
 /**
@@ -21,7 +21,7 @@ func bracket(r rune) bool {
 /**
  *
  */
-func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
+func getMysqlCdr(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
 	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
@@ -35,11 +35,11 @@ func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
 	//
 	log.Tracef("Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
-	results = make([]m.RawCall, len(rows))
+	results = make([]RawCall, len(rows))
 	i := 0
 	for _, row := range rows {
 		//
-		var c m.RawCall //Cdr
+		var c RawCall //Cdr
 		//mapping databases fields
 		calldate := res.Map("calldate")
 		clid := res.Map("clid")
@@ -74,7 +74,7 @@ func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
 			caller_number := raw_clid[0]
 		}*/
 		//
-		c = m.RawCall{Id: bson.NewObjectId(),
+		c = RawCall{Id: bson.NewObjectId(),
 			Calldate:       time.Unix(row.Int64(calldate)+int64(timeZoneOffset), 0),
 			MetadataDt:     time.Unix(time.Now().Unix()+int64(timeZoneOffset), 0),
 			ClidName:       caller_name,
@@ -104,7 +104,7 @@ func getMysqlCdr(db mysql.Conn) (results []m.RawCall, err error) {
 /**
  * Process selection CEL events for given unique id
  */
-func getMySqlCel(db mysql.Conn, uniqueid string) (cel m.Cel, err error) {
+func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
 	myCelQuery := "select UNIX_TIMESTAMP(eventtime) as eventtime from cel where eventtype LIKE 'ANSWER' AND linkedid!=uniqueid AND linkedid=" + uniqueid
 	//
 	rows, res, err := db.Query(myCelQuery)
@@ -124,7 +124,7 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel m.Cel, err error) {
 	return cel, nil
 }
 
-func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail, err error) {
+func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, err error) {
 	var sqlBase = "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, context, peer, uniqueid, linkedid  FROM  cel WHERE "
 	var sqlOrder = " order by eventtime, id"
 	//
@@ -168,12 +168,12 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []m.CallDetail
 		return nil, nil
 	}
 	//prepare results array
-	results = make([]m.CallDetail, len(rows))
+	results = make([]CallDetail, len(rows))
 	log.Debugf("getMySqlCallDetails create results  for [%d] rows\r\n", len(rows))
 	i := 0
 	for _, row := range rows {
 		//
-		var c m.CallDetail
+		var c CallDetail
 		//mapping databases fields
 		eventtype := res.Map("eventtype")
 		eventtime := res.Map("eventtime")
