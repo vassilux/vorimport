@@ -1,5 +1,5 @@
 {
- "dbMySqlHost": "127.0.0.1:3306",
+ "dbMySqlHost": "192.168.3.20:3306",
  "dbMySqlUser": "root",
  "dbMySqlPassword": "lepanos",
  "dbMySqlName": "asteriskcdrdb",
