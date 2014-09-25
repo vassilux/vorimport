@@ -327,7 +327,7 @@ func main() {
 		os.Exit(1)
 	}()
 	//
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {

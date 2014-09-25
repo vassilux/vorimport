@@ -68,7 +68,7 @@ type MetaData struct {
 	Disposition int       `bson:"disposition"`
 }
 
-type CallsByHours struct {
+type DatasByHours struct {
 	H0  int `bson:"0"`
 	H1  int `bson:"1"`
 	H2  int `bson:"2"`
@@ -95,19 +95,56 @@ type CallsByHours struct {
 	H23 int `bson:"23"`
 }
 
+type DatasByDayOfMonth struct {
+	D1  int `bson:"1"`
+	D2  int `bson:"2"`
+	D3  int `bson:"3"`
+	D4  int `bson:"4"`
+	D5  int `bson:"5"`
+	D6  int `bson:"6"`
+	D7  int `bson:"7"`
+	D8  int `bson:"8"`
+	D9  int `bson:"9"`
+	D10 int `bson:"10"`
+	D11 int `bson:"11"`
+	D12 int `bson:"12"`
+	D13 int `bson:"13"`
+	D14 int `bson:"14"`
+	D15 int `bson:"15"`
+	D16 int `bson:"16"`
+	D17 int `bson:"17"`
+	D18 int `bson:"18"`
+	D19 int `bson:"19"`
+	D20 int `bson:"20"`
+	D21 int `bson:"21"`
+	D22 int `bson:"22"`
+	D23 int `bson:"23"`
+	D24 int `bson:"24"`
+	D25 int `bson:"25"`
+	D26 int `bson:"26"`
+	D27 int `bson:"27"`
+	D28 int `bson:"28"`
+	D29 int `bson:"29"`
+	D30 int `bson:"30"`
+	D31 int `bson:"31"`
+}
+
 type DailyCall struct {
 	Id              string       `bson:"_id"`
 	Meta            MetaData     `bson:"metadata"`
 	AnswereWaitTime int          `bson:"answer_wait_time"`
 	CallDaily       int          `bson:"call_daily"`
 	DurationDaily   int          `bson:"duration_daily"`
-	CallsHourly     CallsByHours `bson:"call_hourly"`
+	CallsHourly     DatasByHours `bson:"call_hourly"`
+	DurationsHourly DatasByHours `bson:"duration_hourly"`
 }
 
 type MonthlyCall struct {
-	Id              string   `bson:"_id"`
-	Meta            MetaData `bson:"metadata"`
-	AnswereWaitTime int      `bson:"answer_wait_time"`
-	CallMonthly     int      `bson:"call_monthly"`
-	DurationMonthly int      `bson:"duration_monthly"`
+	Id              string            `bson:"_id"`
+	Meta            MetaData          `bson:"metadata"`
+	AnswereWaitTime int               `bson:"answer_wait_time"`
+	CallMonthly     int               `bson:"call_monthly"`
+	DurationMonthly int               `bson:"duration_monthly"`
+	CallsDaily      DatasByDayOfMonth `bson:"calls_daily"`
+	DurationsDaily  DatasByDayOfMonth `bson:"durations_daily"`
 }

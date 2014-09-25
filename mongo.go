@@ -8,7 +8,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"os"
 	"time"
-	//m "vorimport/models"
 )
 
 type TestDummy struct {
@@ -61,10 +60,12 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		CallMonthly: 0, DurationMonthly: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
+	var callsDailyInc = fmt.Sprintf("calls_daily.%d", cdr.Calldate.Day())
+	var durationsDailyInc = fmt.Sprintf("durations_daily.%d", cdr.Calldate.Day())
 	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
-			"answer_wait_time": cdr.AnswerWaitTime},
+			"answer_wait_time": cdr.AnswerWaitTime, callsDailyInc: 1, durationsDailyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
 	}
@@ -186,9 +187,12 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
 	//
+	var callsDailyInc = fmt.Sprintf("calls_daily.%d", cdr.Calldate.Day())
+	var durationsDailyInc = fmt.Sprintf("durations_daily.%d", cdr.Calldate.Day())
+	//
 	var change = mgo.Change{
 		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
-			"answer_wait_time": cdr.AnswerWaitTime},
+			"answer_wait_time": cdr.AnswerWaitTime, callsDailyInc: 1, durationsDailyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
 	}
@@ -228,17 +232,6 @@ func processDidDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	var dst = cdr.Dnid
 	collectionName = "dailydid_incomming"
 	//
-	/*
-		callsHourly := CallsByHours{}
-		callsHourly.H0 = 0
-		callsHourly.H1 = 0
-		callsHourly.H2 = 0
-		callsHourly.H3 = 0
-		callsHourly.H4 = 0
-		callsHourly.H5 = 0
-		callsHourly.H6 = 0
-		callsHourly.H7 = 0*/
-
 	var id = fmt.Sprintf("%04d%02d%02d-%s-%d", cdr.Calldate.Year(), cdr.Calldate.Month(),
 		cdr.Calldate.Day(), dst, cdr.Disposition)
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
