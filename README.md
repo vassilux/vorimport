@@ -5,7 +5,11 @@ Import cdr asterisk datas from mysql backend to mongo
 
 
 ***** Installation
-    Please check if redis server and mongo server are installed and configured on the target system.
+    Install mongodb and redis packages in the target system
+    
+    apt-get mongodb redis-server
+    
+    apt-get git mercurial bzr
     
     Execute make depends to install dependances of the project.
     
