@@ -1,5 +1,5 @@
 {
- "dbMySqlHost": "192.168.3.20:3306",
+ "dbMySqlHost": "localhost:3306",
  "dbMySqlUser": "root",
  "dbMySqlPassword": "lepanos",
  "dbMySqlName": "asteriskcdrdb",
@@ -42,16 +42,10 @@
  { "name": "simulate-outcall", "direction": 3},
  { "name": "test-teletech-alive-call", "direction": 1},
  { "name": "voicemenu-custom-2", "direction": 2},
-{ "name": "voicemenu-custom-1", "direction": 2},
-{ "name": "conferences", "direction": 2},
-{ "name": "appc-esi-conference", "direction": 3},
-{ "name": "app-recorde-prompt", "direction": 3},
-{ "name": "appc-esi-conference-room-choise", "direction": 3}
-
-
-
-
-
-
+ { "name": "voicemenu-custom-1", "direction": 2},
+ { "name": "conferences", "direction": 2},
+ { "name": "appc-esi-conference", "direction": 3},
+ { "name": "app-recorde-prompt", "direction": 3},
+ { "name": "appc-esi-conference-room-choise", "direction": 3}
  ]
 }

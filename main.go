@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	log "github.com/cihub/seelog"
 	"github.com/ziutek/mymysql/mysql"
@@ -15,7 +16,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	//m "vorimport/models"
 )
 
 type Context struct {
@@ -38,6 +38,8 @@ var (
 	configLock         = new(sync.RWMutex)
 	timeZoneOffset     int64
 	isImportProcessing bool
+	configFile         = flag.String("config", "config.json", "Configuration file path")
+	importTick         = flag.Int("tick", 10, "Importing tick cycle")
 )
 
 const (
@@ -83,7 +85,7 @@ var (
  *
  */
 func loadConfig(fail bool) {
-	file, err := ioutil.ReadFile("config.json")
+	file, err := ioutil.ReadFile(*configFile)
 
 	if err != nil {
 		log.Errorf("Can't open configuration file : %s", err)
@@ -125,8 +127,8 @@ func GetConfig() *Config {
 
 func init() {
 	//called on the start by go
-	loadConfig(true)
-	loadLogger()
+	//loadLogger()
+	//loadConfig(true)
 
 	s := make(chan os.Signal, 1)
 	signal.Notify(s, syscall.SIGUSR2)
@@ -181,16 +183,14 @@ func importJob() {
 	err := db.Connect()
 	if err != nil {
 		log.Criticalf("Can't connect to the mysql database error : %s.", err)
-		panic(err)
-		//os.Exit(1)
+		return
 	}
 	log.Debug("Connected to the mysql database with success.")
 	//
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
 		log.Debugf("Can't connect to the mongo database error : %s.", err)
-		//os.Exit(1)
-		panic(err)
+		return
 	}
 	session.SetMode(mgo.Monotonic, true)
 	defer session.Close()
@@ -308,10 +308,13 @@ func cleanup() {
 }
 
 func main() {
-	//
+	flag.Parse()
+
+	loadLogger()
+	loadConfig(true)
 
 	config = GetConfig()
-	//
+	//dummy flag for indicate that the import is processing
 	isImportProcessing = false
 	//
 	now := time.Now()
@@ -327,7 +330,8 @@ func main() {
 		os.Exit(1)
 	}()
 	//
-	ticker := time.NewTicker(3 * time.Second)
+	duration := time.Duration(*importTick) * time.Second
+	ticker := time.NewTicker(duration)
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -347,8 +351,8 @@ func main() {
 	}()
 
 	for {
-		log.Debug("Sleeping...")
-		time.Sleep(10 * time.Second) //
+		log.Debug("Working...")
+		time.Sleep(1000 * time.Second) //
 
 	}
 

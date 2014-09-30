@@ -4,6 +4,7 @@
     </exceptions>
     <outputs formatid="all">
         <file path="./log/all.log"/>
+		<console/>
         <filter levels="info">
           <console formatid="fmtinfo"/>
 		  <file path="./log/infos.log"/>

@@ -45,6 +45,14 @@ Import cdr asterisk datas from mysql backend to mongo
     git clone git://github.com/alphazero/Go-Redis.git redis
     cd redis
     go install
+	
+****** Application startup
+
+	Application can be started with command line options
+	
+	--config , the json configuration file 
+	
+	--tick , the value on seconds for schedule the import task
 
   
 
