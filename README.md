@@ -5,7 +5,10 @@ Import cdr asterisk datas from mysql backend to mongo
 
 
 ***** Installation
-    Install mongodb and redis packages in the target system
+    Install mongodb and redis packages in the target system.
+	
+	Note : mongodb v 2.6.1 is used. Installation of packages is processing by avor_installation script.
+	You can check this script for more information
     
     apt-get mongodb redis-server
     
@@ -53,6 +56,10 @@ Import cdr asterisk datas from mysql backend to mongo
 	--config , the json configuration file 
 	
 	--tick , the value on seconds for schedule the import task
+	
+****** Application tips
+
+	Application can be stopped by a proper way , send kill [pid]. You can find the pid by ps aux|grep vorimport
 
   
 

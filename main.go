@@ -30,6 +30,8 @@ type Config struct {
 	DbMySqlName           string
 	DbMySqlFetchRowNumber string
 	MongoHost             string
+	EventsMongoHost       string
+	AsteriskID            string
 	DialplanContext       []Context
 }
 
@@ -40,6 +42,7 @@ var (
 	isImportProcessing bool
 	configFile         = flag.String("config", "config.json", "Configuration file path")
 	importTick         = flag.Int("tick", 10, "Importing tick cycle")
+	eventWatcher       *EventWatcher
 )
 
 const (
@@ -126,19 +129,8 @@ func GetConfig() *Config {
 }
 
 func init() {
-	//called on the start by go
-	//loadLogger()
-	//loadConfig(true)
+	//
 
-	s := make(chan os.Signal, 1)
-	signal.Notify(s, syscall.SIGUSR2)
-	go func() {
-		for {
-			<-s
-			loadConfig(false)
-			log.Info("Configuration reloading")
-		}
-	}()
 }
 
 func getInOutStatus(cdr RawCall) (status int, err error) {
@@ -175,6 +167,28 @@ func syncPublish(spec *redis.ConnectionSpec, channel string, messageType string)
 	client.Quit()
 }
 
+func sendEventNotification(flag int, name, datas string) {
+	ev := &Event{
+		Mask:  new(BitSet),
+		Datas: datas,
+		Name:  name,
+	}
+	ev.Mask.Set(flag)
+	eventWatcher.event <- ev
+}
+
+func sendMySqlEventNotification(flag int) {
+	datas := fmt.Sprintf("MySql server : %s change state", config.DbMySqlHost)
+	name := fmt.Sprintf("MySql state : %d", flag)
+	sendEventNotification(flag, name, datas)
+}
+
+func sendMongoEventNotification(flag int) {
+	datas := fmt.Sprintf("Mongo server : %s change state", config.DbMySqlHost)
+	name := fmt.Sprintf("Mongo state : %d", flag)
+	sendEventNotification(flag, name, datas)
+}
+
 func importJob() {
 	//
 	db := mysql.New("tcp", "", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
@@ -182,18 +196,22 @@ func importJob() {
 	//
 	err := db.Connect()
 	if err != nil {
+		sendMySqlEventNotification(EV_MYSQL_ERROR)
 		log.Criticalf("Can't connect to the mysql database error : %s.", err)
 		return
 	}
+	sendMySqlEventNotification(EV_MYSQL_SUCCESS)
 	log.Debug("Connected to the mysql database with success.")
 	//
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
 		log.Debugf("Can't connect to the mongo database error : %s.", err)
+		sendMongoEventNotification(EV_MONGO_ERROR)
 		return
 	}
 	session.SetMode(mgo.Monotonic, true)
 	defer session.Close()
+	sendMongoEventNotification(EV_MONGO_SUCCESS)
 	log.Debug("Connected to the mongo database with success.")
 	//
 	cdrs, err := getMysqlCdr(db)
@@ -304,16 +322,45 @@ func importJob() {
 }
 
 func cleanup() {
+	name := fmt.Sprintf("vorimport state : %d", EV_STOP)
+	sendEventNotification(EV_STOP, name, "vorimport stopped")
+	//wait for the eventWatcher
+	select {
+	case <-eventWatcher.done:
+		log.Info("Event watcher stopped.")
+	}
 	log.Info("Execute the application cleanup")
+	log.Flush()
 }
 
 func main() {
 	flag.Parse()
-
 	loadLogger()
 	loadConfig(true)
 
 	config = GetConfig()
+
+	eventWatcher = NewEventWatcher(config)
+	go eventWatcher.run()
+
+	//something wrong I cannot trup SIGUSR1 :-)
+	/*s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGUSR1)*/
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		cleanup()
+		os.Exit(1)
+		/*<-s
+		loadConfig(false)
+		log.Info("Configuration reloading")*/
+	}()
+	//
+	log.Infof("Starting for %s", config.AsteriskID)
 	//dummy flag for indicate that the import is processing
 	isImportProcessing = false
 	//
@@ -321,18 +368,13 @@ func main() {
 	_, timeZoneOffset := now.Zone()
 	log.Infof("Startring and using the timezone offset used : %d.", timeZoneOffset)
 	//
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	signal.Notify(c, syscall.SIGTERM)
-	go func() {
-		<-c
-		cleanup()
-		os.Exit(1)
-	}()
+
 	//
 	duration := time.Duration(*importTick) * time.Second
 	ticker := time.NewTicker(duration)
 	quit := make(chan struct{})
+	name := fmt.Sprintf("vorimport state : %d", EV_START)
+	sendEventNotification(EV_START, name, "vorimport started")
 	go func() {
 		for {
 			select {
