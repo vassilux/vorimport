@@ -226,8 +226,9 @@ func importJob() {
 	var incommingCount = 0
 	var outgoingCount = 0
 	for _, cdr := range cdrs {
+		cdr.AsteriskId = config.AsteriskID
 		var datetime = cdr.Calldate.Format(time.RFC3339)
-		log.Tracef("Get raw cdr for the date [%s], the clid [%s] and the context [%s]", datetime, cdr.ClidNumber, cdr.Dcontext)
+		log.Tracef("Get raw cdr for the date [%s], the clid [%s] and the context [%s] from asterisk [%s]", datetime, cdr.ClidNumber, cdr.Dcontext, cdr.AsteriskId)
 		var cel Cel
 		cel, err = getMySqlCel(db, cdr.Uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)

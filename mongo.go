@@ -27,7 +27,7 @@ func createMongoCdr(session *mgo.Session, cdr RawCall) (err error) {
 		log.Criticalf("Can't insert document: %v", err)
 		os.Exit(1)
 	} else {
-		log.Debugf("Row inserted into mongo database: %s", cdr.ClidName)
+		log.Debugf("Row inserted into mongo database for %s from asterisk [%s]", cdr.ClidName, cdr.AsteriskId)
 	}
 	return
 }
@@ -278,7 +278,7 @@ func processDidDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 }
 
 func importCdrToMongo(session *mgo.Session, cdr RawCall) (err error) {
-	log.Tracef("Start analyze data for mongo database.")
+	log.Debugf("Start analyze data for mongo database from asterisk : [%s].", cdr.AsteriskId)
 	createMongoCdr(session, cdr)
 	err = processDailyAnalytics(session, cdr)
 	if err != nil {

@@ -29,6 +29,7 @@ type Cel struct {
 
 type RawCall struct {
 	Id             bson.ObjectId `bson:"_id"`
+	AsteriskId     string        `bson:"asterisk_id"`
 	Calldate       time.Time     `bson:"call_date"`
 	MetadataDt     time.Time     `bson:"metadata_date"`
 	ClidName       string        `bson:"clid_name"`
