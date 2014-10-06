@@ -21,11 +21,13 @@ fi
 #
 #
 mkdir "$DEPLOY_DIR"
+
 cp -aR ./bin/* "$DEPLOY_DIR"
 cp -aR ./samples/* "$DEPLOY_DIR"
 #
 mkdir "$DEPLOY_DIR/docs"
 pandoc -o "$DEPLOY_DIR/docs/INSTALL.html" ./docs/INSTALL.md
+cp "$DEPLOY_DIR/docs/INSTALL.html" .
 
 tar cvzf "${DEPLOY_FILE_NAME}" "${DEPLOY_DIR}"
 
@@ -33,7 +35,7 @@ if [ ! -f "$DEPLOY_FILE_NAME" ]; then
     echo "Deploy build failed."
     exit 1
 fi
+
 rm -rf "$DEPLOY_DIR"
-pandoc -o "INSTALL.html" ./docs/INSTALL.md
 
 echo "Deploy build complete."
