@@ -20,7 +20,9 @@ func Test_DstChannel(t *testing.T) {
 }
 
 func Test_EventWatcher_MySql(t *testing.T) {
-	eventWatcher := NewEventWatcher()
+	loadConfig(false)
+	config := GetConfig()
+	eventWatcher := NewEventWatcher(config)
 	go eventWatcher.run()
 	ev := &Event{
 		Mask:  new(BitSet),
@@ -68,5 +70,19 @@ func Test_EventWatcher_MySql(t *testing.T) {
 	if eventWatcher.eventsMask.HasBit(EV_MYSQL_ERROR) || !eventWatcher.eventsMask.HasBit(EV_MYSQL_SUCCESS) {
 		t.Fail()
 	}
+
+}
+
+func Test_CallOriginator(t *testing.T) {
+	addr := "192.168.3.20"
+	port := 5038
+	user := "astmanager"
+	pswd := "lepanos"
+
+	callOriginator := NewCallOriginator(addr, port, user, pswd)
+
+	callOriginator.testCall <- true
+
+	time.Sleep(1 * time.Second)
 
 }
