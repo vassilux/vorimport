@@ -1,4 +1,4 @@
-<seelog type="adaptive" mininterval="2000000" maxinterval="100000000" critmsgcount="500" minlevel="debug">
+<seelog type="adaptive" mininterval="2000000" maxinterval="100000000" critmsgcount="500" minlevel="info">
     <exceptions>
         <exception filepattern="test*" minlevel="error"/>
     </exceptions>

@@ -32,17 +32,25 @@ type Config struct {
 	MongoHost             string
 	EventsMongoHost       string
 	AsteriskID            string
+	AsteriskAddr          string
+	AsteriskPort          int
+	AsteriskUser          string
+	AsteriskPassword      string
+	TestCallSchedule      int
 	DialplanContext       []Context
 }
 
 var (
-	config             *Config
-	configLock         = new(sync.RWMutex)
-	timeZoneOffset     int64
-	isImportProcessing bool
-	configFile         = flag.String("config", "config.json", "Configuration file path")
-	importTick         = flag.Int("tick", 10, "Importing tick cycle")
-	eventWatcher       *EventWatcher
+	config               *Config
+	configLock           = new(sync.RWMutex)
+	timeZoneOffset       int64
+	isImportProcessing   bool
+	configFile           = flag.String("config", "config.json", "Configuration file path")
+	importTick           = flag.Int("tick", 10, "Importing tick cycle")
+	eventWatcher         *EventWatcher
+	testCallOriginator   *callOriginator
+	stopImportJob        chan bool
+	stopGenerateTestCall chan bool
 )
 
 const (
@@ -323,6 +331,9 @@ func importJob() {
 }
 
 func cleanup() {
+	stopImportJob <- true
+	stopGenerateTestCall <- true
+	//
 	name := fmt.Sprintf("vorimport state : %d", EV_STOP)
 	sendEventNotification(EV_STOP, name, "vorimport stopped")
 	//wait for the eventWatcher
@@ -334,15 +345,48 @@ func cleanup() {
 	log.Flush()
 }
 
+func generateTestCall() {
+	testCallOriginator.testCall <- true
+	time.Sleep(5 * time.Second)
+	db := mysql.New("tcp", "", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
+	log.Debugf("Connecting to the database %s %s %s %s.", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
+	//
+	err := db.Connect()
+	if err != nil {
+		sendMySqlEventNotification(EV_MYSQL_ERROR)
+		log.Criticalf("Can't connect to the mysql database error : %s.", err)
+		return
+	}
+	sendMySqlEventNotification(EV_MYSQL_SUCCESS)
+	//
+	cdrs, err := getMysqlCdr(db)
+	if len(cdrs) == 0 {
+		log.Error("Oups something is wrong")
+	} else {
+		for _, cdr := range cdrs {
+			err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, 1)
+			if err != nil {
+				log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
+				os.Exit(1)
+			}
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
 	loadLogger()
 	loadConfig(true)
-
+	//
 	config = GetConfig()
-
+	//
 	eventWatcher = NewEventWatcher(config)
 	go eventWatcher.run()
+	//
+	if config.TestCallSchedule > 0 {
+		log.Infof("Create test call originator for the asterisk %s:%d", config.AsteriskAddr, config.AsteriskPort)
+		testCallOriginator = NewCallOriginator(config.AsteriskAddr, config.AsteriskPort, config.AsteriskUser, config.AsteriskPassword)
+	}
 
 	//something wrong I cannot trup SIGUSR1 :-)
 	/*s := make(chan os.Signal, 1)
@@ -372,8 +416,13 @@ func main() {
 
 	//
 	duration := time.Duration(*importTick) * time.Second
-	ticker := time.NewTicker(duration)
-	quit := make(chan struct{})
+	//ticker := time.NewTicker(duration)
+	stopImportJob = schedule(importJob, duration)
+
+	name := fmt.Sprintf("vorimport state : %d", EV_START)
+	sendEventNotification(EV_START, name, "vorimport started")
+
+	/* //make(chan struct{})
 	name := fmt.Sprintf("vorimport state : %d", EV_START)
 	sendEventNotification(EV_START, name, "vorimport started")
 	go func() {
@@ -391,7 +440,11 @@ func main() {
 				return
 			}
 		}
-	}()
+	}() */
+
+	durationTestCall := time.Duration(config.TestCallSchedule) * time.Minute
+	//ticker := time.NewTicker(duration)
+	stopGenerateTestCall = schedule(generateTestCall, durationTestCall)
 
 	for {
 		log.Debug("Working...")

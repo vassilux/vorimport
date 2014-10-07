@@ -23,7 +23,7 @@ func bracket(r rune) bool {
  */
 func getMysqlCdr(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
-	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 LIMIT 0, " + config.DbMySqlFetchRowNumber
+	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext NOT LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
 	log.Tracef("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
@@ -122,6 +122,86 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
 	}
 
 	return cel, nil
+}
+
+func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
+	log.Tracef("Enter into getMysqlCdr")
+	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
+	//
+	log.Tracef("Executing request [%s]\r\n", myQuery)
+	rows, res, err := db.Query(myQuery)
+	//
+	if err != nil {
+		log.Debugf("Executing request [%s] and get error [%s] \r\n", myQuery, err)
+		return nil, err
+	}
+	//
+	log.Tracef("Request executed and get [%d] rows\r\n", len(rows))
+	//prepare results array
+	results = make([]RawCall, len(rows))
+	i := 0
+	for _, row := range rows {
+		//
+		var c RawCall //Cdr
+		//mapping databases fields
+		calldate := res.Map("calldate")
+		clid := res.Map("clid")
+		src := res.Map("src")
+		dst := res.Map("dst")
+		channel := res.Map("channel")
+		dcontext := res.Map("dcontext")
+		disposition := res.Map("disposition")
+		billsec := res.Map("billsec")
+		duration := res.Map("duration")
+		uniqueid := res.Map("uniqueid")
+		dnid := res.Map("dnid")
+		recordfile := res.Map("recordfile")
+		dstchannel := res.Map("dstchannel")
+		//
+		raw_clid := strings.FieldsFunc(row.Str(clid), bracket)
+		caller_name := ""
+		caller_number := ""
+
+		if len(raw_clid) == 2 {
+			caller_name = raw_clid[0]
+			caller_number = raw_clid[1]
+		} else if len(raw_clid) == 1 {
+			caller_number = raw_clid[0]
+		}
+
+		/*if len(raw_clid) == 2 {
+			caller_name := raw_clid[0]
+			caller_number := raw_clid[1]
+
+		}else len(raw_clid) == 1 {
+			caller_number := raw_clid[0]
+		}*/
+		//
+		c = RawCall{Id: bson.NewObjectId(),
+			Calldate:       time.Unix(row.Int64(calldate)+int64(timeZoneOffset), 0),
+			MetadataDt:     time.Unix(time.Now().Unix()+int64(timeZoneOffset), 0),
+			ClidName:       caller_name,
+			ClidNumber:     caller_number,
+			Src:            row.Str(src),
+			Channel:        row.Str(channel),
+			Dcontext:       row.Str(dcontext),
+			DispositionStr: row.Str(disposition),
+			Disposition:    0,
+			AnswerWaitTime: 0,
+			Billsec:        row.Int(billsec),
+			Duration:       row.Int(duration),
+			Uniqueid:       row.Str(uniqueid),
+			InoutStatus:    0,
+			RecordFile:     row.Str(recordfile),
+			Dst:            row.Str(dst),
+			Dnid:           row.Str(dnid),
+			Dstchannel:     row.Str(dstchannel)}
+		//
+		results[i] = c
+		i++
+
+	}
+	return results, nil
 }
 
 func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, err error) {
