@@ -21,7 +21,7 @@ Vérifier si l'application est en cours d'execution via console de supervisor : 
 Si l'application est en court d'exécution arrêter l'application : stop vorimport
 Quitter le console : exit
 
-Crée un lien symbolic ls -s /opt/vorimport/current /opt/revor/vorimport_[version]
+Crée un lien symbolic ln -s /opt/revor/vorimport_[version] /opt/vorimport/current 
 > **NOTE:**
 >
 > - En cas si le répertoire existe /opt/vorimport/current. Supprimer rm -rf /opt/vorimport/current
