@@ -13,8 +13,7 @@
  "asteriskPassword": "lepanos",
  "testCallSchedule": 20,
  "notifications": [
-	"f1com",
-	"smtp"
+	"f1com"
  ],
  "dialplanContext":  [
  { "name": "app-out", "direction": 1},

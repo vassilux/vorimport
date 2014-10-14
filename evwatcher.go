@@ -13,8 +13,8 @@ const (
 	APPSTO  = 2
 	MYSQKO  = 3
 	MYSQOK  = 4
-	MONGOKO = 5
-	MONGOOK = 6
+	MONGKO  = 5
+	MONGOK  = 6
 	TCALOK  = 7
 	TCALKO  = 8
 	CCALOK  = 9 // check call action success
@@ -82,8 +82,8 @@ func NewEventWatcher(config *Config) (ew *EventWatcher) {
 	ew.eventsMask.Set(APPSTO)
 	ew.eventsMask.Set(MYSQKO)
 	ew.eventsMask.Set(MYSQOK)
-	ew.eventsMask.Set(MONGOKO)
-	ew.eventsMask.Set(MONGOOK)
+	ew.eventsMask.Set(MONGKO)
+	ew.eventsMask.Set(MONGOK)
 	ew.eventsMask.Set(TCALKO)
 	ew.eventsMask.Set(TCALOK)
 	ew.eventsMask.Set(CCALOK)
@@ -145,22 +145,22 @@ func (eventWatcher *EventWatcher) processEvent(event *Event) {
 
 	//mongo parts
 
-	if event.Mask.HasBit(MONGOKO) {
-		if eventWatcher.eventsMask.HasBit(MONGOKO) {
-			var pushEvent = bson.M{"type": 1, "code": "MONGOKO", "data": event.Datas}
+	if event.Mask.HasBit(MONGKO) {
+		if eventWatcher.eventsMask.HasBit(MONGKO) {
+			var pushEvent = bson.M{"type": 1, "code": "MONGKO", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(MONGOKO)
-			eventWatcher.eventsMask.Set(MONGOOK)
+			eventWatcher.eventsMask.Clear(MONGKO)
+			eventWatcher.eventsMask.Set(MONGOK)
 		}
 
 	}
 
-	if event.Mask.HasBit(MONGOOK) {
-		if eventWatcher.eventsMask.HasBit(MONGOOK) {
-			var pushEvent = bson.M{"type": 1, "code": "MONGOOK", "data": event.Datas}
+	if event.Mask.HasBit(MONGOK) {
+		if eventWatcher.eventsMask.HasBit(MONGOK) {
+			var pushEvent = bson.M{"type": 1, "code": "MONGOK", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(MONGOOK)
-			eventWatcher.eventsMask.Set(MONGOKO)
+			eventWatcher.eventsMask.Clear(MONGOK)
+			eventWatcher.eventsMask.Set(MONGKO)
 		}
 
 	}

@@ -212,12 +212,12 @@ func importJob() {
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
 		log.Debugf("Can't connect to the mongo database error : %s.", err)
-		sendMongoEventNotification(MONGOKO)
+		sendMongoEventNotification(MONGKO)
 		return
 	}
 	session.SetMode(mgo.Monotonic, true)
 	defer session.Close()
-	sendMongoEventNotification(MONGOOK)
+	sendMongoEventNotification(MONGOK)
 	log.Debug("Connected to the mongo database with success.")
 	//
 	cdrs, err := getMysqlCdr(db)
