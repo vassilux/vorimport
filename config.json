@@ -7,11 +7,15 @@
  "mongoHost": "127.0.0.1",
  "asteriskID": "asterisk1",
  "eventsMongoHost": "127.0.0.1",
- "asteriskAddr": "192.168.3.20",
+ "asteriskAddr": "127.0.0.1",
  "asteriskPort" : 5038,
  "asteriskUser" : "astmanager",
  "asteriskPassword": "lepanos",
- "testCallSchedule": 1,
+ "testCallSchedule": 20,
+ "notifications": [
+	"f1com",
+	"smtp"
+ ],
  "dialplanContext":  [
  { "name": "app-out", "direction": 1},
  { "name": "incomming", "direction": 2},

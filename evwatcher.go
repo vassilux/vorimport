@@ -8,13 +8,17 @@ import (
 )
 
 const (
-	EV_NULL          = 0
-	EV_START         = 1
-	EV_STOP          = 2
-	EV_MYSQL_ERROR   = 3
-	EV_MYSQL_SUCCESS = 4
-	EV_MONGO_ERROR   = 5
-	EV_MONGO_SUCCESS = 6
+	EV_NULL = 0
+	APPSTA  = 1
+	APPSTO  = 2
+	MYSQKO  = 3
+	MYSQOK  = 4
+	MONGOKO = 5
+	MONGOOK = 6
+	TCALOK  = 7
+	TCALKO  = 8
+	CCALOK  = 9 // check call action success
+	CCALKO  = 10
 )
 
 type BitSet struct {
@@ -53,7 +57,7 @@ func EmptyBitSet() *BitSet {
 type Event struct {
 	Mask  *BitSet // Mask of event
 	Datas string  // Data of event
-	Name  string  // Name of event
+	Code  string  // Code of event
 }
 
 type EventWatcher struct {
@@ -69,16 +73,21 @@ type EventWatcher struct {
 //Create a event watcher and set the mask of events to all
 func NewEventWatcher(config *Config) (ew *EventWatcher) {
 	ew = new(EventWatcher)
+	ew.config = config
 	ew.event = make(chan *Event)
 	ew.done = make(chan bool, 1)
 
 	ew.eventsMask = EmptyBitSet()
-	ew.eventsMask.Set(EV_START)
-	ew.eventsMask.Set(EV_STOP)
-	ew.eventsMask.Set(EV_MYSQL_ERROR)
-	ew.eventsMask.Set(EV_MYSQL_SUCCESS)
-	ew.eventsMask.Set(EV_MONGO_ERROR)
-	ew.eventsMask.Set(EV_MONGO_SUCCESS)
+	ew.eventsMask.Set(APPSTA)
+	ew.eventsMask.Set(APPSTO)
+	ew.eventsMask.Set(MYSQKO)
+	ew.eventsMask.Set(MYSQOK)
+	ew.eventsMask.Set(MONGOKO)
+	ew.eventsMask.Set(MONGOOK)
+	ew.eventsMask.Set(TCALKO)
+	ew.eventsMask.Set(TCALOK)
+	ew.eventsMask.Set(CCALOK)
+	ew.eventsMask.Set(CCALKO)
 
 	ew.storageWorker = NewEventStorageWorker()
 	//comment cause Save methode used from EventStorageWorker
@@ -88,68 +97,117 @@ func NewEventWatcher(config *Config) (ew *EventWatcher) {
 }
 
 func (eventWatcher *EventWatcher) publishEvent(event bson.M) {
-	log.Println("publishEvent : ", event)
-	eventWatcher.storageWorker.Save(config.EventsMongoHost, event)
+	for _, notification := range eventWatcher.config.Notifications {
+		event["appid"] = "vorimport"
+		event["asteriskid"] = eventWatcher.config.AsteriskID
+		event["transport"] = notification
+		log.Println("publishEvent : ", event)
+		eventWatcher.storageWorker.Save(config.EventsMongoHost, event)
+	}
 }
 
 //Handler dispatch events and flip the event type
 //Flip is used to send one time the same type of notification
 func (eventWatcher *EventWatcher) processEvent(event *Event) {
 	//log.Println("processEvent : ", event)
-	if event.Mask.HasBit(EV_START) {
-		var pushEvent = bson.M{"type": EV_START, "data": event.Datas}
+	if event.Mask.HasBit(APPSTA) {
+		var pushEvent = bson.M{"type": 1, "code": "APPSTA", "data": event.Datas}
 		eventWatcher.publishEvent(pushEvent)
 	}
 
-	if event.Mask.HasBit(EV_STOP) {
-		var pushEvent = bson.M{"type": EV_STOP, "data": event.Datas}
+	if event.Mask.HasBit(APPSTO) {
+		var pushEvent = bson.M{"type": 1, "code": "APPSTO", "data": event.Datas}
 		eventWatcher.publishEvent(pushEvent)
 		eventWatcher.done <- true
 	}
 
 	//Follow code can/has be refactored
 	//mysql parts
-	if event.Mask.HasBit(EV_MYSQL_ERROR) {
-		if eventWatcher.eventsMask.HasBit(EV_MYSQL_ERROR) {
-			var pushEvent = bson.M{"type": EV_MYSQL_ERROR, "data": event.Datas}
+	if event.Mask.HasBit(MYSQKO) {
+		if eventWatcher.eventsMask.HasBit(MYSQKO) {
+			var pushEvent = bson.M{"type": 1, "code": "MYSQKO", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(EV_MYSQL_ERROR)
-			eventWatcher.eventsMask.Set(EV_MYSQL_SUCCESS)
+			eventWatcher.eventsMask.Clear(MYSQKO)
+			eventWatcher.eventsMask.Set(MYSQOK)
 		}
 
 	}
 
-	if event.Mask.HasBit(EV_MYSQL_SUCCESS) {
-		if eventWatcher.eventsMask.HasBit(EV_MYSQL_SUCCESS) {
-			var pushEvent = bson.M{"type": EV_MYSQL_SUCCESS, "data": event.Datas}
+	if event.Mask.HasBit(MYSQOK) {
+		if eventWatcher.eventsMask.HasBit(MYSQOK) {
+			var pushEvent = bson.M{"type": 1, "code": "MYSQOK", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(EV_MYSQL_SUCCESS)
-			eventWatcher.eventsMask.Set(EV_MYSQL_ERROR)
+			eventWatcher.eventsMask.Clear(MYSQOK)
+			eventWatcher.eventsMask.Set(MYSQKO)
 		}
 
 	}
 
 	//mongo parts
 
-	if event.Mask.HasBit(EV_MONGO_ERROR) {
-		if eventWatcher.eventsMask.HasBit(EV_MONGO_ERROR) {
-			var pushEvent = bson.M{"type": EV_MONGO_ERROR, "data": event.Datas}
+	if event.Mask.HasBit(MONGOKO) {
+		if eventWatcher.eventsMask.HasBit(MONGOKO) {
+			var pushEvent = bson.M{"type": 1, "code": "MONGOKO", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(EV_MONGO_ERROR)
-			eventWatcher.eventsMask.Set(EV_MONGO_SUCCESS)
+			eventWatcher.eventsMask.Clear(MONGOKO)
+			eventWatcher.eventsMask.Set(MONGOOK)
 		}
 
 	}
 
-	if event.Mask.HasBit(EV_MONGO_SUCCESS) {
-		if eventWatcher.eventsMask.HasBit(EV_MONGO_SUCCESS) {
-			var pushEvent = bson.M{"type": EV_MONGO_SUCCESS, "data": event.Datas}
+	if event.Mask.HasBit(MONGOOK) {
+		if eventWatcher.eventsMask.HasBit(MONGOOK) {
+			var pushEvent = bson.M{"type": 1, "code": "MONGOOK", "data": event.Datas}
 			eventWatcher.publishEvent(pushEvent)
-			eventWatcher.eventsMask.Clear(EV_MONGO_SUCCESS)
-			eventWatcher.eventsMask.Set(EV_MONGO_ERROR)
+			eventWatcher.eventsMask.Clear(MONGOOK)
+			eventWatcher.eventsMask.Set(MONGOKO)
 		}
 
 	}
+
+	//test call part
+	if event.Mask.HasBit(TCALKO) {
+		if eventWatcher.eventsMask.HasBit(TCALKO) {
+			var pushEvent = bson.M{"type": 1, "code": "TCALKO", "data": event.Datas}
+			eventWatcher.publishEvent(pushEvent)
+			eventWatcher.eventsMask.Clear(TCALKO)
+			eventWatcher.eventsMask.Set(TCALOK)
+		}
+
+	}
+
+	if event.Mask.HasBit(TCALOK) {
+		if eventWatcher.eventsMask.HasBit(TCALOK) {
+			var pushEvent = bson.M{"type": 1, "code": "TCALOK", "data": event.Datas}
+			eventWatcher.publishEvent(pushEvent)
+			eventWatcher.eventsMask.Clear(TCALOK)
+			eventWatcher.eventsMask.Set(TCALKO)
+		}
+
+	}
+
+	if event.Mask.HasBit(CCALKO) {
+		if eventWatcher.eventsMask.HasBit(CCALKO) {
+			var pushEvent = bson.M{"type": CCALKO, "code": "CCALKO", "data": event.Datas}
+			eventWatcher.publishEvent(pushEvent)
+			eventWatcher.eventsMask.Clear(CCALKO)
+			eventWatcher.eventsMask.Set(CCALOK)
+		}
+
+	}
+
+	if event.Mask.HasBit(CCALOK) {
+		fmt.Println("Enter CCALOK")
+		if eventWatcher.eventsMask.HasBit(CCALOK) {
+			fmt.Println("Enter CCALOK send and change flag")
+			var pushEvent = bson.M{"type": 1, "code": "CCALOK", "data": event.Datas}
+			eventWatcher.publishEvent(pushEvent)
+			eventWatcher.eventsMask.Clear(CCALOK)
+			eventWatcher.eventsMask.Set(CCALKO)
+		}
+
+	}
+
 }
 
 func (eventWatcher *EventWatcher) run() {

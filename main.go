@@ -38,6 +38,7 @@ type Config struct {
 	AsteriskPassword      string
 	TestCallSchedule      int
 	DialplanContext       []Context
+	Notifications         []string
 }
 
 var (
@@ -175,11 +176,10 @@ func syncPublish(spec *redis.ConnectionSpec, channel string, messageType string)
 	client.Quit()
 }
 
-func sendEventNotification(flag int, name, datas string) {
+func sendEventNotification(flag int, datas string) {
 	ev := &Event{
 		Mask:  new(BitSet),
 		Datas: datas,
-		Name:  name,
 	}
 	ev.Mask.Set(flag)
 	eventWatcher.event <- ev
@@ -187,14 +187,12 @@ func sendEventNotification(flag int, name, datas string) {
 
 func sendMySqlEventNotification(flag int) {
 	datas := fmt.Sprintf("MySql server : %s change state", config.DbMySqlHost)
-	name := fmt.Sprintf("MySql state : %d", flag)
-	sendEventNotification(flag, name, datas)
+	sendEventNotification(flag, datas)
 }
 
 func sendMongoEventNotification(flag int) {
 	datas := fmt.Sprintf("Mongo server : %s change state", config.DbMySqlHost)
-	name := fmt.Sprintf("Mongo state : %d", flag)
-	sendEventNotification(flag, name, datas)
+	sendEventNotification(flag, datas)
 }
 
 func importJob() {
@@ -204,22 +202,22 @@ func importJob() {
 	//
 	err := db.Connect()
 	if err != nil {
-		sendMySqlEventNotification(EV_MYSQL_ERROR)
+		sendMySqlEventNotification(MYSQKO)
 		log.Criticalf("Can't connect to the mysql database error : %s.", err)
 		return
 	}
-	sendMySqlEventNotification(EV_MYSQL_SUCCESS)
+	sendMySqlEventNotification(MYSQOK)
 	log.Debug("Connected to the mysql database with success.")
 	//
 	session, err := mgo.Dial(config.MongoHost)
 	if err != nil {
 		log.Debugf("Can't connect to the mongo database error : %s.", err)
-		sendMongoEventNotification(EV_MONGO_ERROR)
+		sendMongoEventNotification(MONGOKO)
 		return
 	}
 	session.SetMode(mgo.Monotonic, true)
 	defer session.Close()
-	sendMongoEventNotification(EV_MONGO_SUCCESS)
+	sendMongoEventNotification(MONGOOK)
 	log.Debug("Connected to the mongo database with success.")
 	//
 	cdrs, err := getMysqlCdr(db)
@@ -334,8 +332,8 @@ func cleanup() {
 	stopImportJob <- true
 	stopGenerateTestCall <- true
 	//
-	name := fmt.Sprintf("vorimport state : %d", EV_STOP)
-	sendEventNotification(EV_STOP, name, "vorimport stopped")
+	data := fmt.Sprintf("Application stopped : %d", APPSTO)
+	sendEventNotification(APPSTO, data)
 	//wait for the eventWatcher
 	select {
 	case <-eventWatcher.done:
@@ -346,30 +344,50 @@ func cleanup() {
 }
 
 func generateTestCall() {
+	//
 	testCallOriginator.testCall <- true
-	time.Sleep(5 * time.Second)
+	//
+	select {
+	case res := <-testCallOriginator.resultTestCall:
+		if res != nil {
+			data := fmt.Sprintf("Test call failed : %v for the asterisk server %s.", res, config.AsteriskID)
+			//log.Errorf("Failed create test call for the asterisk %s:%d : %s.", config.AsteriskAddr, config.AsteriskPort, res)
+			sendEventNotification(TCALKO, data)
+			return
+		} else {
+			data := fmt.Sprintf("Test call ok : %d", TCALOK)
+			sendEventNotification(TCALOK, data)
+		}
+	}
+	//little stuoid wait
+	time.Sleep(3 * time.Second)
 	db := mysql.New("tcp", "", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
 	log.Debugf("Connecting to the database %s %s %s %s.", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
 	//
 	err := db.Connect()
 	if err != nil {
-		sendMySqlEventNotification(EV_MYSQL_ERROR)
-		log.Criticalf("Can't connect to the mysql database error : %s.", err)
+		data := fmt.Sprintf("Failed check the generated test call : %v for the asterisk server %s.", err, config.AsteriskID)
+		sendEventNotification(CCALKO, data)
 		return
 	}
-	sendMySqlEventNotification(EV_MYSQL_SUCCESS)
 	//
-	cdrs, err := getMysqlCdr(db)
+	cdrs, err := getMysqlCdrTestCall(db)
 	if len(cdrs) == 0 {
-		log.Error("Oups something is wrong")
+		data := fmt.Sprint("Cannot find the generated test call into asterisk database for the asterisk server %s.", config.AsteriskID)
+		sendEventNotification(CCALKO, data)
+		log.Errorf(data)
 	} else {
 		for _, cdr := range cdrs {
-			err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, 1)
+			err = deleteMySqlCdrRecord(db, cdr.Uniqueid)
 			if err != nil {
-				log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
+				log.Errorf("Can't delete the test call record with unique id [%s] cause get an error %v.", cdr.Uniqueid, err)
+				cleanup()
 				os.Exit(1)
 			}
 		}
+		data := fmt.Sprintf("Test call ok : %d for the asterisk server %s.", CCALOK, config.AsteriskID)
+		sendEventNotification(TCALOK, data)
+		log.Infof("Asterisk the test call processed with success.")
 	}
 }
 
@@ -419,30 +437,10 @@ func main() {
 	//ticker := time.NewTicker(duration)
 	stopImportJob = schedule(importJob, duration)
 
-	name := fmt.Sprintf("vorimport state : %d", EV_START)
-	sendEventNotification(EV_START, name, "vorimport started")
+	data := fmt.Sprintf("Application vorimport started : %d", APPSTA)
+	sendEventNotification(APPSTA, data)
 
-	/* //make(chan struct{})
-	name := fmt.Sprintf("vorimport state : %d", EV_START)
-	sendEventNotification(EV_START, name, "vorimport started")
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				if isImportProcessing == false {
-					isImportProcessing = true
-					importJob()
-					isImportProcessing = false
-				}
-
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}() */
-
-	durationTestCall := time.Duration(config.TestCallSchedule) * time.Minute
+	durationTestCall := time.Duration(config.TestCallSchedule) * time.Second
 	//ticker := time.NewTicker(duration)
 	stopGenerateTestCall = schedule(generateTestCall, durationTestCall)
 

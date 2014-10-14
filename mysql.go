@@ -8,7 +8,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"strings"
 	"time"
-	//m "vorimport/models"
 )
 
 /**
@@ -285,6 +284,13 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 
 func udpateMySqlCdrImportStatus(db mysql.Conn, uniqueid string, status int) (err error) {
 	var query = fmt.Sprintf("UPDATE cdr SET import = %d WHERE uniqueid = '%s'", status, uniqueid)
+	_, _, err = db.Query(query)
+	//
+	return err
+}
+
+func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
+	var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
 	_, _, err = db.Query(query)
 	//
 	return err
