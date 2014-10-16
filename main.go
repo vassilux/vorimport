@@ -18,6 +18,10 @@ import (
 	"time"
 )
 
+const (
+	VERSION = "1.0.0"
+)
+
 type Context struct {
 	Name      string
 	Direction int
@@ -48,6 +52,7 @@ var (
 	isImportProcessing   bool
 	configFile           = flag.String("config", "config.json", "Configuration file path")
 	importTick           = flag.Int("tick", 10, "Importing tick cycle")
+	version              = flag.Bool("version", false, "show version")
 	eventWatcher         *EventWatcher
 	testCallOriginator   *callOriginator
 	stopImportJob        chan bool
@@ -393,6 +398,13 @@ func generateTestCall() {
 
 func main() {
 	flag.Parse()
+	//
+	if *version {
+		fmt.Printf("Version : %s\n", VERSION)
+		fmt.Println("Get fun!")
+		return
+	}
+	//
 	loadLogger()
 	loadConfig(true)
 	//
