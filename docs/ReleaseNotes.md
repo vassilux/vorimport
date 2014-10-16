@@ -10,8 +10,8 @@ Fixing:
 
 New:
 
-Add periodic test call.
-Add generation the event for different status of application.
+    Add periodic test call.
+    Add generation the event for different status of application.
 
 
 ==================================================================================
