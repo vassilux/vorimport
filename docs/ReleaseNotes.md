@@ -9,7 +9,6 @@ Release 1.0.1 date : 23/09/2013
 Fixing:
 
 New:
-
     Add periodic test call.
     Add generation the event for different status of application.
 
