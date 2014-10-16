@@ -337,8 +337,7 @@ func cleanup() {
 	stopImportJob <- true
 	stopGenerateTestCall <- true
 	//
-	data := fmt.Sprintf("Application stopped : %d", APPSTO)
-	sendEventNotification(APPSTO, data)
+	sendEventNotification(APPSTO, "Application stopped")
 	//wait for the eventWatcher
 	select {
 	case <-eventWatcher.done:
@@ -355,13 +354,11 @@ func generateTestCall() {
 	select {
 	case res := <-testCallOriginator.resultTestCall:
 		if res != nil {
-			data := fmt.Sprintf("Test call failed : %v for the asterisk server %s.", res, config.AsteriskID)
-			//log.Errorf("Failed create test call for the asterisk %s:%d : %s.", config.AsteriskAddr, config.AsteriskPort, res)
+			data := fmt.Sprintf("Failed for the asterisk server %s.", res)
 			sendEventNotification(TCALKO, data)
 			return
 		} else {
-			data := fmt.Sprintf("Test call ok : %d", TCALOK)
-			sendEventNotification(TCALOK, data)
+			sendEventNotification(TCALOK, "Test call ok")
 		}
 	}
 	//little stuoid wait
@@ -371,14 +368,14 @@ func generateTestCall() {
 	//
 	err := db.Connect()
 	if err != nil {
-		data := fmt.Sprintf("Failed check the generated test call : %v for the asterisk server %s.", err, config.AsteriskID)
+		data := fmt.Sprintf("Failed generate test call : %v.", err)
 		sendEventNotification(CCALKO, data)
 		return
 	}
 	//
 	cdrs, err := getMysqlCdrTestCall(db)
 	if len(cdrs) == 0 {
-		data := fmt.Sprint("Cannot find the generated test call into asterisk database for the asterisk server %s.", config.AsteriskID)
+		data := fmt.Sprint("Failed generated test call for the asterisk server %s.", config.AsteriskID)
 		sendEventNotification(CCALKO, data)
 		log.Errorf(data)
 	} else {
@@ -390,8 +387,8 @@ func generateTestCall() {
 				os.Exit(1)
 			}
 		}
-		data := fmt.Sprintf("Test call ok : %d for the asterisk server %s.", CCALOK, config.AsteriskID)
-		sendEventNotification(TCALOK, data)
+		data := fmt.Sprintf("Check call ok for the asterisk server %s.", config.AsteriskID)
+		sendEventNotification(CCALOK, data)
 		log.Infof("Asterisk the test call processed with success.")
 	}
 }
@@ -442,15 +439,11 @@ func main() {
 	now := time.Now()
 	_, timeZoneOffset := now.Zone()
 	log.Infof("Startring and using the timezone offset used : %d.", timeZoneOffset)
-	//
-
-	//
+	//go for schedule job
 	duration := time.Duration(*importTick) * time.Second
 	//ticker := time.NewTicker(duration)
 	stopImportJob = schedule(importJob, duration)
-
-	data := fmt.Sprintf("Application vorimport started : %d", APPSTA)
-	sendEventNotification(APPSTA, data)
+	sendEventNotification(APPSTA, "Application vorimport started.")
 
 	durationTestCall := time.Duration(config.TestCallSchedule) * time.Second
 	//ticker := time.NewTicker(duration)
