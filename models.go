@@ -160,18 +160,18 @@ type DailyCall struct {
 	Id              string       `bson:"_id"`
 	Meta            MetaData     `bson:"metadata"`
 	AnswereWaitTime int          `bson:"answer_wait_time"`
-	CallDaily       int          `bson:"call_daily"`
-	DurationDaily   int          `bson:"duration_daily"`
-	CallsHourly     DatasByHours `bson:"call_hourly"`
-	DurationsHourly DatasByHours `bson:"duration_hourly"`
+	CallDaily       int          `bson:"calls"`
+	DurationDaily   int          `bson:"duration"`
+	CallsHourly     DatasByHours `bson:"calls_per_hours"`
+	DurationsHourly DatasByHours `bson:"durations_per_hours"`
 }
 
 type MonthlyCall struct {
 	Id              string            `bson:"_id"`
 	Meta            MetaData          `bson:"metadata"`
 	AnswereWaitTime int               `bson:"answer_wait_time"`
-	CallMonthly     int               `bson:"call_monthly"`
-	DurationMonthly int               `bson:"duration_monthly"`
-	CallsDaily      DatasByDayOfMonth `bson:"calls_daily"`
-	DurationsDaily  DatasByDayOfMonth `bson:"durations_daily"`
+	CallMonthly     int               `bson:"calls"`
+	DurationMonthly int               `bson:"duration"`
+	CallsDaily      DatasByDayOfMonth `bson:"calls_per_days"`
+	DurationsDaily  DatasByDayOfMonth `bson:"durations_per_days"`
 }

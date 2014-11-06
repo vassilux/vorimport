@@ -127,11 +127,11 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		CallMonthly: 0, DurationMonthly: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
-	var callsDailyInc = fmt.Sprintf("calls_daily.%d", cdr.Calldate.Day())
-	var durationsDailyInc = fmt.Sprintf("durations_daily.%d", cdr.Calldate.Day())
+	var callsDailyInc = fmt.Sprintf("calls_per_days.%d", cdr.Calldate.Day())
+	var durationsDailyInc = fmt.Sprintf("durations_per_days.%d", cdr.Calldate.Day())
 	//
 	var change = mgo.Change{
-		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
+		Update: bson.M{"$inc": bson.M{"calls": 1, "duration": cdr.Billsec,
 			"answer_wait_time": cdr.AnswerWaitTime, callsDailyInc: 1, durationsDailyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
@@ -190,11 +190,11 @@ func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		DurationDaily: 0}
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
-	var hourlyInc = fmt.Sprintf("call_hourly.%d", cdr.Calldate.Hour())
-	var durationHourlyInc = fmt.Sprintf("duration_hourly.%d", cdr.Calldate.Hour())
+	var hourlyInc = fmt.Sprintf("calls_per_hours.%d", cdr.Calldate.Hour())
+	var durationHourlyInc = fmt.Sprintf("durations_per_hours.%d", cdr.Calldate.Hour())
 	//
 	var change = mgo.Change{
-		Update: bson.M{"$inc": bson.M{"call_daily": 1, "duration_daily": cdr.Billsec,
+		Update: bson.M{"$inc": bson.M{"calls": 1, "duration": cdr.Billsec,
 			"answer_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
@@ -321,11 +321,11 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
 	//
-	var callsDailyInc = fmt.Sprintf("calls_daily.%d", cdr.Calldate.Day())
-	var durationsDailyInc = fmt.Sprintf("durations_daily.%d", cdr.Calldate.Day())
+	var callsDailyInc = fmt.Sprintf("calls_per_days.%d", cdr.Calldate.Day())
+	var durationsDailyInc = fmt.Sprintf("durations_per_days.%d", cdr.Calldate.Day())
 	//
 	var change = mgo.Change{
-		Update: bson.M{"$inc": bson.M{"call_monthly": 1, "duration_monthly": cdr.Billsec,
+		Update: bson.M{"$inc": bson.M{"calls": 1, "duration": cdr.Billsec,
 			"answer_wait_time": cdr.AnswerWaitTime, callsDailyInc: 1, durationsDailyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
@@ -377,11 +377,11 @@ func processDidDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		DurationDaily: 0}
 
 	var selector = bson.M{"_id": id, "metadata": metaDoc}
-	var hourlyInc = fmt.Sprintf("call_hourly.%d", cdr.Calldate.Hour())
-	var durationHourlyInc = fmt.Sprintf("duration_hourly.%d", cdr.Calldate.Hour())
+	var hourlyInc = fmt.Sprintf("calls_per_hours.%d", cdr.Calldate.Hour())
+	var durationHourlyInc = fmt.Sprintf("durations_per_hours.%d", cdr.Calldate.Hour())
 	//
 	var change = mgo.Change{
-		Update: bson.M{"$inc": bson.M{"call_daily": 1, "duration_daily": cdr.Billsec,
+		Update: bson.M{"$inc": bson.M{"calls": 1, "duration": cdr.Billsec,
 			"answer_wait_time": cdr.AnswerWaitTime, hourlyInc: 1, durationHourlyInc: cdr.Billsec},
 		},
 		ReturnNew: false,
