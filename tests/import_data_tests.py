@@ -8,6 +8,7 @@ import string
 import time
 import MySQLdb
 import getopt
+import datetime
 
 '''
 Please create virtualenv revor 
@@ -55,7 +56,6 @@ incall_default_peer = """\
 incall_default_dnid = """\
 1157
 1158
-8400
 """.split()
 
 outcall_default_clids = """\
@@ -76,10 +76,7 @@ outcall_default_dst = """\
 hangupcause_causes = """\
 ANSWERED
 BUSY
-ANSWERED
-CONGESTION
-ANSWERED
-FAILED
+NOANSWER
 ANSWERED
 ANSWERED
 ANSWERED
@@ -89,6 +86,10 @@ ANSWERED
 MAX_INCALLS_NUMBER = 0
 
 MAX_OUTCALLS_NUMBER = 0
+
+seconds_in_a_day = 60 * 60 * 24
+
+MONTH_AGO = 2
 
 #
 char_set_uniqueid = string.digits
@@ -125,7 +126,9 @@ def generate_incomming():
 		#callername = "%s%d" % (it_name, count_contact)
 		#hangupcause_id = random.randint(15, 17)
     	timestamp = int(str(time.time()).split('.')[0])
-    	timestamp = timestamp - random.randint(1, 86400)
+    	timestamp = timestamp - (seconds_in_a_day * 30 * MONTH_AGO)
+    	timestamp = timestamp - random.randint(1, 86400) 
+
 
     	if incall_hangup_cause != "ANSWERED":
     		billsec = 0
@@ -166,6 +169,7 @@ def generate_outgoing():
 		#callername = "%s%d" % (it_name, count_contact)
 		#hangupcause_id = random.randint(15, 17)
     	timestamp = int(str(time.time()).split('.')[0])
+    	timestamp = timestamp - (seconds_in_a_day * 30 * MONTH_AGO)
     	timestamp = timestamp - random.randint(1, 86400)
 
     	if outcall_hangup_cause != "ANSWERED":
@@ -202,8 +206,9 @@ def main():
 	print "main----"
 	global MAX_INCALLS_NUMBER
 	global MAX_OUTCALLS_NUMBER
+	global MONTH_AGO
 	try:
-	    myopts, args = getopt.getopt(sys.argv[1:],"i:o:")
+	    myopts, args = getopt.getopt(sys.argv[1:],"i:o:m")
 	except getopt.GetoptError as e:
 	    print (str(e))
 	    print("Usage: %s -i number of incomming calls -o numbers of outgoing calls " % sys.argv[0])
@@ -214,6 +219,8 @@ def main():
 	        MAX_INCALLS_NUMBER = string.atoi(a)
 	    elif o == '-o':
 	        MAX_OUTCALLS_NUMBER = string.atoi(a)
+	    elif o == '-m':
+	    	MONTH_AGO = string.atoi(a)
 
 	#generate_outgoing()
 	if MAX_INCALLS_NUMBER > 0:
@@ -225,5 +232,6 @@ def main():
 		invoke_outcall_generator()
 
 
+	print "Live good buddy"
 if __name__ == '__main__':
 	main()

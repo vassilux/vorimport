@@ -38,6 +38,13 @@ function main()
 	mongo revor --eval "db.monthlyanalytics_incomming.drop()"
 	mongo revor --eval "db.monthlyanalytics_outgoing.drop()"
 	mongo revor --eval "db.monthlydid_incomming.drop()"
+	mongo revor --eval "db.monthlydid_summary.drop()"
+	mongo revor --eval "db.monthlydid_summary.drop()"
+	
+	mongo revor --eval "db.monthlypeeroutgoing_summary.drop()"
+	mongo revor --eval "db.monthlypeerincomming_summary.drop()"
+	
+	
 
 }
 

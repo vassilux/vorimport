@@ -398,7 +398,7 @@ func main() {
 	//
 	if *version {
 		fmt.Printf("Version : %s\n", VERSION)
-		fmt.Println("Get fun!")
+		fmt.Println("Get fun! Live well !")
 		return
 	}
 	//

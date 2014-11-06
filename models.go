@@ -69,6 +69,32 @@ type MetaData struct {
 	Disposition int       `bson:"disposition"`
 }
 
+type DidMetaData struct {
+	Did string    `bson:"did"`
+	Dt  time.Time `bson:"dt"`
+}
+
+type DidSummaryCall struct {
+	Id       string      `bson:"_id"`
+	Meta     DidMetaData `bson:"metadata"`
+	Calls    int         `bson:"calls"`
+	Missing  int         `bson:"missing"`
+	Duration int         `bson:"duration"`
+}
+
+type PeerMetaData struct {
+	Peer string    `bson:"peer"`
+	Dt   time.Time `bson:"dt"`
+}
+
+type PeerSummaryCall struct {
+	Id       string       `bson:"_id"`
+	Meta     PeerMetaData `bson:"metadata"`
+	Calls    int          `bson:"calls"`
+	Missing  int          `bson:"missing"`
+	Duration int          `bson:"duration"`
+}
+
 type DatasByHours struct {
 	H0  int `bson:"0"`
 	H1  int `bson:"1"`
