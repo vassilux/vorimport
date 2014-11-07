@@ -89,7 +89,7 @@ MAX_OUTCALLS_NUMBER = 0
 
 seconds_in_a_day = 60 * 60 * 24
 
-MONTH_AGO = 0
+MONTH_AGO = 2
 
 #
 char_set_uniqueid = string.digits
