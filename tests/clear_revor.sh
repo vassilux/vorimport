@@ -30,13 +30,13 @@ function main()
   	fi  
 
 	mongo revor --eval "db.cdrs.drop()"
-	mongo revor --eval "db.dailyanalytics_incomming.drop()"
+	mongo revor --eval "db.dailypeer_incomming.drop()"
 
-	mongo revor --eval "db.dailyanalytics_outgoing.drop()"
+	mongo revor --eval "db.dailypeer_outgoing.drop()"
 	mongo revor --eval "db.dailydid_incomming.drop()"
-	mongo revor --eval "db.monthlyanalytics__incomming.drop()"
-	mongo revor --eval "db.monthlyanalytics_incomming.drop()"
-	mongo revor --eval "db.monthlyanalytics_outgoing.drop()"
+	mongo revor --eval "db.monthlypeer__incomming.drop()"
+	mongo revor --eval "db.monthlypeer_incomming.drop()"
+	mongo revor --eval "db.monthlypeer_outgoing.drop()"
 	mongo revor --eval "db.monthlydid_incomming.drop()"
 	mongo revor --eval "db.monthlydid_summary.drop()"
 	mongo revor --eval "db.monthlydid_summary.drop()"

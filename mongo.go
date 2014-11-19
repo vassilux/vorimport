@@ -105,10 +105,10 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	var collectionName = ""
 	var dst = ""
 	if cdr.InoutStatus == DIRECTION_CALL_OUT {
-		collectionName = "monthlyanalytics_outgoing"
+		collectionName = "monthlypeer_outgoing"
 		dst = cdr.Src
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
-		collectionName = "monthlyanalytics_incomming"
+		collectionName = "monthlypeer_incomming"
 		dst = cdr.Dst
 	} else {
 		return errors.New("Can't detect the call context")
@@ -171,10 +171,10 @@ func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	var collectionName = ""
 	var dst = ""
 	if cdr.InoutStatus == DIRECTION_CALL_OUT {
-		collectionName = "dailyanalytics_outgoing"
+		collectionName = "dailypeer_outgoing"
 		dst = cdr.Src
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
-		collectionName = "dailyanalytics_incomming"
+		collectionName = "dailypeer_incomming"
 		dst = cdr.Dst
 	} else {
 		return errors.New("[mongo] Can't detect the call context")

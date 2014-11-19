@@ -37,6 +37,14 @@ if [ ! -f "$DEPLOY_FILE_NAME" ]; then
     exit 1
 fi
 
+if [ ! -d releases ]; then
+        mkdir releases
+fi
+
+mv ${DEPLOY_FILE_NAME} ./releases
+mv INSTALL.* ./releases
+mv ReleaseNotes.* ./releases
+
 rm -rf "$DEPLOY_DIR"
 
 echo "Deploy build complete."
