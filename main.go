@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	VERSION = "1.0.3"
+	VERSION = "1.0.4"
 )
 
 type Context struct {
@@ -318,6 +318,12 @@ func importJob() {
 			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
 			os.Exit(1)
 		}
+
+		err = deleteMySqlCelRecord(db, cdr.Uniqueid)
+		if err != nil {
+			log.Errorf("Can't delete cel records for uniqueid[%s].", cdr.Uniqueid)
+		}
+
 	}
 	//
 	spec := redis.DefaultSpec()
@@ -393,6 +399,26 @@ func generateTestCall() {
 	}
 }
 
+func checkConfigAndDie() {
+	if len(config.AsteriskAddr) == 0 {
+		log.Critical("Asterisk address is null or empty. Please check the configuraiton file.\n")
+		log.Flush()
+		os.Exit(1)
+	}
+
+	if len(config.AsteriskUser) == 0 || len(config.AsteriskPassword) == 0 {
+		log.Critical("Asterisk credentials missing.  Please check the configuration file.\n")
+		log.Flush()
+		os.Exit(1)
+	}
+
+	if config.TestCallSchedule < 30 {
+		log.Criticalf("Asterisk tesing interval is too short : %d. Minimal value is 30(seconds).Please check the configuration file.\n", config.TestCallSchedule)
+		log.Flush()
+		os.Exit(1)
+	}
+}
+
 func main() {
 	flag.Parse()
 	//
@@ -406,6 +432,9 @@ func main() {
 	loadConfig(true)
 	//
 	config = GetConfig()
+	//to be carrefule and check if the configuraiton is not
+	checkConfigAndDie()
+
 	//
 	eventWatcher = NewEventWatcher(config)
 	go eventWatcher.run()

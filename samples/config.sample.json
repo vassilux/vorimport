@@ -1,15 +1,26 @@
 {
- "dbMySqlHost": "127.0.0.1:3306",
+ "dbMySqlHost": "127.0.0.1:3306", 
  "dbMySqlUser": "asterisk",
- "dbMySqlPassword": "asterisk",
+ "dbMySqlPassword": "crakcme",
  "dbMySqlName": "asteriskcdrdb",
  "dbMySqlFetchRowNumber": "81",
  "mongoHost": "127.0.0.1",
- "asteriskID": "asterisk1",
+ "asteriskID": "asthost",
  "eventsMongoHost": "127.0.0.1",
+ "asteriskAddr": "127.0.0.1",
+ "asteriskPort" : 5038,
+ "asteriskUser" : "astmanager",
+ "asteriskPassword": "crackme",
+ "testCallSchedule": 20,
+ "notifications": [
+	"f1com"
+ ],
  "dialplanContext":  [
- { "name": "app-out", "direction": 1},
- { "name": "DLPN_DialPlan1", "direction": 2},
- { "name": "app-daynight-toggle", "direction": 3},
+	 { "name": "app-out", "direction": 1},
+	 { "name": "DLPN_DialPlan1", "direction": 2},
+	 { "name": "ringroups-custom-1", "direction": 2},
+	 { "name": "DID_span_1", "direction": 2},
+	 { "name": "app-daynight-toggle", "direction": 3}
  ]
+
 }

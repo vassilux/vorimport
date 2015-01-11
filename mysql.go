@@ -24,15 +24,15 @@ func getMysqlCdr(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
 	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext NOT LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
-	log.Tracef("Executing request [%s]\r\n", myQuery)
+	log.Debugf("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
 	//
 	if err != nil {
-		log.Debugf("Executing request [%s] and get error [%s] \r\n", myQuery, err)
+		log.Errorf("Executing request [%s] and get error [%s] \r\n", myQuery, err)
 		return nil, err
 	}
 	//
-	log.Tracef("Request executed and get [%d] rows\r\n", len(rows))
+	log.Tracef("getMysqlCdr request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
 	results = make([]RawCall, len(rows))
 	i := 0
@@ -104,19 +104,22 @@ func getMysqlCdr(db mysql.Conn) (results []RawCall, err error) {
  * Process selection CEL events for given unique id
  */
 func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
-	myCelQuery := "select UNIX_TIMESTAMP(eventtime) as eventtime from cel where eventtype LIKE 'ANSWER' AND linkedid!=uniqueid AND linkedid=" + uniqueid
+	myCelQuery := "select UNIX_TIMESTAMP(eventtime) as eventtime from cel where eventtype LIKE 'ANSWER' AND linkedid!=uniqueid AND linkedid='" + uniqueid + "'"
 	//
 	rows, res, err := db.Query(myCelQuery)
 	if err != nil {
 		return cel, err
 	}
+
+	log.Tracef("getMySqlCel request executed and get [%d] rows\r\n", len(rows))
+
 	if len(rows) > 0 {
-		log.Tracef("Get rows for uniqueid [%s]", uniqueid)
+		log.Tracef("getMySqlCel get rows for uniqueid [%s]", uniqueid)
 		row := rows[0]
 		eventtime := res.Map("eventtime")
 		cel.EventTime = row.Int64(eventtime)
 	} else {
-		log.Tracef("Can't get rows for uniqueid [%s].", uniqueid)
+		log.Tracef("getMySqlCel faied to get rows for uniqueid [%s].", uniqueid)
 		cel.EventTime = 0
 	}
 
@@ -127,7 +130,7 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
 	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
 	//
-	log.Tracef("Executing request [%s]\r\n", myQuery)
+	log.Debugf("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
 	//
 	if err != nil {
@@ -135,7 +138,7 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 		return nil, err
 	}
 	//
-	log.Tracef("Request executed and get [%d] rows\r\n", len(rows))
+	log.Tracef("getMysqlCdrTestCall Request executed and get [%d] rows\r\n", len(rows))
 	//prepare results array
 	results = make([]RawCall, len(rows))
 	i := 0
@@ -206,19 +209,20 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, err error) {
 	var sqlBase = "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, context, peer, uniqueid, linkedid  FROM  cel WHERE "
 	var sqlOrder = " order by eventtime, id"
-	//
-	var sqlStart = sqlBase + "uniqueid = " + uniqueid + " OR linkedid = " + uniqueid + sqlOrder
-	//
-	/*myQuery := "SELECT eventtype, UNIX_TIMESTAMP(eventtime) as eventtime, cid_num,  cid_dnid, exten, context, peer, uniqueid, linkedid  FROM  cel WHERE uniqueid =" +
-	uniqueid + " OR linkedid = " + uniqueid + " order by eventtime, id"*/
-	log.Tracef(" getMySqlCallDetails Executing request [%s]\r\n", sqlStart)
+
+	var sqlStart = sqlBase + " uniqueid = '" + uniqueid + "' OR linkedid = '" + uniqueid + "' " + sqlOrder
+
+	log.Debugf("getMySqlCallDetails execute request [%s]\n", sqlStart)
+
 	rows, res, err := db.Query(sqlStart)
 	//
 	if err != nil {
-		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlStart, err)
+		log.Debugf("getMySqlCallDetailsExecuting request get error [%s]\n", err)
 		return nil, err
 	}
+
 	if len(rows) == 0 {
+		log.Tracef("getMySqlCallDetails 0 records from cel table for uniqueid [%s]\n", uniqueid)
 		return nil, nil
 	}
 	//
@@ -226,8 +230,10 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 	for _, row := range rows {
 		uniqueid := res.Map("uniqueid")
 		linkedid := res.Map("linkedid")
-		searchIdMap[row.Str(uniqueid)] = row.Str(uniqueid)
-		searchIdMap[row.Str(linkedid)] = row.Str(linkedid)
+		keyUniqueid := fmt.Sprintf("'%s'", row.Str(uniqueid))
+		keyLinkedId := fmt.Sprintf("'%s'", row.Str(linkedid))
+		searchIdMap[keyUniqueid] = keyUniqueid
+		searchIdMap[keyLinkedId] = keyLinkedId
 
 	}
 	var keys []string
@@ -237,48 +243,53 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 	var strIds = strings.Join(keys, ",")
 
 	var sqlNext = sqlBase + "uniqueid IN (" + strIds + ") OR linkedid IN (" + strIds + ")" + sqlOrder
+
+	log.Debugf("getMySqlCallDetailsExecuting sqlNext [%s].\n", sqlNext)
+
 	//
-	rows, res, err = db.Query(sqlNext)
-	if err != nil {
-		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, err)
-		return nil, err
+	rowsNext, resNext, errNext := db.Query(sqlNext)
+	if errNext != nil {
+		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, errNext)
+		return nil, errNext
 	}
-	if len(rows) == 0 {
+
+	if len(rowsNext) == 0 {
 		return nil, nil
 	}
+
 	//prepare results array
-	results = make([]CallDetail, len(rows))
-	log.Debugf("getMySqlCallDetails create results  for [%d] rows\r\n", len(rows))
+	results = make([]CallDetail, len(rowsNext))
+	log.Tracef("getMySqlCallDetails create results  for [%d] rows\r\n", len(rowsNext))
 	i := 0
-	for _, row := range rows {
+	for _, rowNext := range rowsNext {
 		//
 		var c CallDetail
 		//mapping databases fields
-		eventtype := res.Map("eventtype")
-		eventtime := res.Map("eventtime")
-		cid_num := res.Map("cid_num")
-		cid_dnid := res.Map("cid_dnid")
-		exten := res.Map("exten")
-		uniqueid := res.Map("uniqueid")
-		linkedid := res.Map("linkedid")
-		context := res.Map("context")
-		peer := res.Map("peer")
+		eventtype := resNext.Map("eventtype")
+		eventtime := resNext.Map("eventtime")
+		cid_num := resNext.Map("cid_num")
+		cid_dnid := resNext.Map("cid_dnid")
+		exten := resNext.Map("exten")
+		uniqueid := resNext.Map("uniqueid")
+		linkedid := resNext.Map("linkedid")
+		context := resNext.Map("context")
+		peer := resNext.Map("peer")
 		//
-		c.EventType = row.Str(eventtype)
-		c.EventTime = time.Unix(row.Int64(eventtime)+int64(timeZoneOffset), 0)
-		c.CidNum = row.Str(cid_num)
-		c.CidDnid = row.Str(cid_dnid)
-		c.Exten = row.Str(exten)
-		c.UniqueId = row.Str(uniqueid)
-		c.LinkedId = row.Str(linkedid)
-		c.Peer = row.Str(peer)
-		c.Context = row.Str(context)
+		c.EventType = rowNext.Str(eventtype)
+		c.EventTime = time.Unix(rowNext.Int64(eventtime)+int64(timeZoneOffset), 0)
+		c.CidNum = rowNext.Str(cid_num)
+		c.CidDnid = rowNext.Str(cid_dnid)
+		c.Exten = rowNext.Str(exten)
+		c.UniqueId = rowNext.Str(uniqueid)
+		c.LinkedId = rowNext.Str(linkedid)
+		c.Peer = rowNext.Str(peer)
+		c.Context = rowNext.Str(context)
 
 		results[i] = c
 		i++
 
 	}
-	log.Debugf("getMySqlCallDetails Return [%d] results .\r\n", len(results))
+	log.Tracef("getMySqlCallDetails Return [%d] results .\r\n", len(results))
 	return results, nil
 }
 
@@ -293,5 +304,17 @@ func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
 	var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
 	_, _, err = db.Query(query)
 	//
+	return err
+}
+
+func deleteMySqlCelRecord(db mysql.Conn, uniqueid string) (err error) {
+	var query = fmt.Sprintf("DELETE FROM cel WHERE uniqueid = '%s' OR linkedid = '%s'", uniqueid, uniqueid)
+	_, _, err = db.Query(query)
+
+	log.Debugf("getMySqlCallDetails execute : [%s] .\n", query)
+
+	if err != nil {
+		log.Errorf("deleteMySqlCelRecord Failed delete record into cel table for uniqueid [%s].\n", uniqueid)
+	}
 	return err
 }

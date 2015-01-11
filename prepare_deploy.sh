@@ -9,7 +9,7 @@ set -e
 
 VER_MAJOR="1"
 VER_MINOR="0"
-VER_PATCH="3"
+VER_PATCH="4"
 
 DEPLOY_DIR="vorimport_${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}"
 DEPLOY_FILE_NAME="vorimport_${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}.tar.gz"
