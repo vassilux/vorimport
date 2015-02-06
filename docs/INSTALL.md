@@ -48,6 +48,24 @@ Mise à jour est identique à l'installation sans la partie de la configuration.
 Il faut copier le ficheir de la configuration actuel (/opt/vorimport/current/config.json) dans le repertoire /opt/vorimport/vorimport_[version] 
 
 
+## Notes
+		Cluster
+		code NODSTO : L'information complimentaire Cluster resource stopped on astnode1
+		code NODSTA : L'information complimentaire resource started on astnode1
+
+		Statistiques:
+		APPSTA  : application vorimport démarrée
+		APPSTO  : application vorimport arrêtée
+		MYSQKO  : connexion à la base de données mysql ok
+		MYSQOK  : connexion à la base de données mysql ko
+		MONGKO  : connexion à la base de données mongo ok
+		MONGOK  : connexion à la base de données mongo ko
+		TCALOK  : connexion au serveur astersik(l'application) est ok
+		TCALKO  : connexion au serveur astersik(l'application) est ko
+		CCALOK  : generation d'un appel de test ok 
+		CCALKO  : generation d'un appel de test ok 
+
+
 
 
 

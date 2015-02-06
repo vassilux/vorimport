@@ -1,17 +1,17 @@
 {
- "dbMySqlHost": "127.0.0.1:3306",
+ "dbMySqlHost": "192.168.3.20:3306",
  "dbMySqlUser": "root",
  "dbMySqlPassword": "lepanos",
  "dbMySqlName": "asteriskcdrdb",
  "dbMySqlFetchRowNumber": "81",
  "mongoHost": "127.0.0.1",
- "asteriskID": "asterisk1",
- "eventsMongoHost": "127.0.0.1",
+ "asteriskID": "asterisk1", 
  "asteriskAddr": "192.168.3.20",
  "asteriskPort" : 5038,
- "asteriskUser" : "astmanager",
+ "asteriskUser" : "vormanager",
  "asteriskPassword": "lepanos",
  "testCallSchedule": 120,
+ "eventsMongoHost": "127.0.0.1",
  "notifications": [
 	"f1com"
  ],

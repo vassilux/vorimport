@@ -94,7 +94,7 @@ MONTH_AGO = 0
 #
 char_set_uniqueid = string.digits
 
-db = MySQLdb.connect(host="localhost", user="root", passwd="lepanos", db="asteriskcdrdb")
+db = MySQLdb.connect(host="192.168.3.20", user="root", passwd="lepanos", db="asteriskcdrdb")
 
 cursor = db.cursor()
 

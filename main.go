@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	VERSION = "1.0.4"
+	VERSION = "1.0.5"
 )
 
 type Context struct {
@@ -360,14 +360,14 @@ func generateTestCall() {
 	select {
 	case res := <-testCallOriginator.resultTestCall:
 		if res != nil {
-			data := fmt.Sprintf("Failed for the asterisk server %s.", res)
+			data := fmt.Sprintf("Connection failed to the asterisk server %s.", res)
 			sendEventNotification(TCALKO, data)
 			return
 		} else {
 			sendEventNotification(TCALOK, "Test call ok")
 		}
 	}
-	//little stuoid wait
+	//little stupid wait
 	time.Sleep(3 * time.Second)
 	db := mysql.New("tcp", "", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
 	log.Debugf("Connecting to the database %s %s %s %s.", config.DbMySqlHost, config.DbMySqlUser, config.DbMySqlPassword, config.DbMySqlName)
@@ -381,7 +381,7 @@ func generateTestCall() {
 	//
 	cdrs, err := getMysqlCdrTestCall(db)
 	if len(cdrs) == 0 {
-		data := fmt.Sprint("Failed generated test call for the asterisk server %s.", config.AsteriskID)
+		data := fmt.Sprintf("Failed find a test call for the asterisk server %s.", config.AsteriskID)
 		sendEventNotification(CCALKO, data)
 		log.Errorf(data)
 	} else {

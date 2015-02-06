@@ -301,8 +301,9 @@ func udpateMySqlCdrImportStatus(db mysql.Conn, uniqueid string, status int) (err
 }
 
 func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
-	var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
-	_, _, err = db.Query(query)
+	/*var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
+	_, _, err = db.Query(query)*/
+	err = udpateMySqlCdrImportStatus(db, uniqueid, 1)
 	//
 	return err
 }
