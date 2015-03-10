@@ -40,7 +40,16 @@ Voici un example
 		exten => h,1,ResetCDR()
 		same => n,NoCDR()
 		
-Seule chose d'imposée d'avoir une extention <b>testcall</b>.
+Merci de créer un utilisateur vorimport(par defaut) dans /etc/asterisk/manager.conf et adapter les droits au système cible si
+la fonction de test d'appel est activée.
+
+		[vorimport]
+		secret = crackme
+		deny=0.0.0.0/0.0.0.0
+		permit=192.168.3.0/255.255.255.0
+		permit=127.0.0.1/255.255.255.0
+		read = system,call,log,verbose,agent,user,config,dtmf,reporting,cdr,dialplan
+		write = system,call,agent,user,command,config,reporting,originate,message
 
 ### Mise à jour 
 Mise à jour est identique à l'installation sans la partie de la configuration.

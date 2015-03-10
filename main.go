@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	VERSION = "1.0.5"
+	VERSION = "X.X.X"
 )
 
 type Context struct {
@@ -34,12 +34,14 @@ type Config struct {
 	DbMySqlName           string
 	DbMySqlFetchRowNumber string
 	MongoHost             string
+	MongoDbName           string
 	EventsMongoHost       string
 	AsteriskID            string
 	AsteriskAddr          string
 	AsteriskPort          int
 	AsteriskUser          string
 	AsteriskPassword      string
+	TestCallActive        bool
 	TestCallSchedule      int
 	DialplanContext       []Context
 	Notifications         []string
@@ -120,6 +122,9 @@ func loadConfig(fail bool) {
 	}
 	configLock.Lock()
 	config = temp
+	if len(config.MongoDbName) == 0 {
+		config.MongoDbName = "revor"
+	}
 	configLock.Unlock()
 }
 
@@ -341,7 +346,11 @@ func importJob() {
 
 func cleanup() {
 	stopImportJob <- true
-	stopGenerateTestCall <- true
+	if config.TestCallActive == true {
+		//wait testing call process
+		stopGenerateTestCall <- true
+	}
+
 	//
 	sendEventNotification(APPSTO, "Application stopped")
 	//wait for the eventWatcher
@@ -355,6 +364,7 @@ func cleanup() {
 
 func generateTestCall() {
 	//
+
 	testCallOriginator.testCall <- true
 	//
 	select {
@@ -412,7 +422,7 @@ func checkConfigAndDie() {
 		os.Exit(1)
 	}
 
-	if config.TestCallSchedule < 30 {
+	if config.TestCallActive && config.TestCallSchedule < 30 {
 		log.Criticalf("Asterisk tesing interval is too short : %d. Minimal value is 30(seconds).Please check the configuration file.\n", config.TestCallSchedule)
 		log.Flush()
 		os.Exit(1)
@@ -476,7 +486,9 @@ func main() {
 
 	durationTestCall := time.Duration(config.TestCallSchedule) * time.Second
 	//ticker := time.NewTicker(duration)
-	stopGenerateTestCall = schedule(generateTestCall, durationTestCall)
+	if config.TestCallActive {
+		stopGenerateTestCall = schedule(generateTestCall, durationTestCall)
+	}
 
 	for {
 		log.Debug("Working...")

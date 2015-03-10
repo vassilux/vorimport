@@ -14,13 +14,9 @@ type TestDummy struct {
 	FirstName string
 }
 
-const (
-	ODIN_MONGO_DATABASENAME = "revor"
-)
-
 //
 func createMongoCdr(session *mgo.Session, cdr RawCall) (err error) {
-	collection := session.DB(ODIN_MONGO_DATABASENAME).C("cdrs")
+	collection := session.DB(config.MongoDbName).C("cdrs")
 	//
 	err = collection.Insert(cdr)
 	if err != nil {
@@ -56,7 +52,7 @@ func processPeerMonthlySummary(session *mgo.Session, cdr RawCall) (err error) {
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(),
 		1, 1, 0, 0, 0, time.UTC)
 	//
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := PeerMetaData{Peer: peer, Dt: metaDate}
 
 	doc := PeerSummaryCall{Id: id, Meta: metaDoc, Calls: 0, Missing: 0, Duration: 0}
@@ -121,7 +117,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		1, 1, 0, 0, 0, time.UTC)
 	//
 	log.Debugf("Import monthly analytics :  %s for the id %s.", collectionName, id)
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
 	doc := MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
 		CallMonthly: 0, DurationMonthly: 0}
@@ -184,7 +180,7 @@ func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		cdr.Calldate.Day(), dst, cdr.Disposition)
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
 	log.Debugf("Import daily analytics :  %s for the id %s.", collectionName, id)
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
 	doc := DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,
 		DurationDaily: 0}
@@ -256,7 +252,7 @@ func processDidMonthlyAnalyticsSummary(session *mgo.Session, cdr RawCall) (err e
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(),
 		1, 1, 0, 0, 0, time.UTC)
 	//
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := DidMetaData{Did: did, Dt: metaDate}
 
 	doc := DidSummaryCall{Id: id, Meta: metaDoc, Calls: 0, Missing: 0, Duration: 0}
@@ -314,7 +310,7 @@ func processDidMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		1, 1, 0, 0, 0, time.UTC)
 	//
 	log.Debugf("Import monthly did :  %s for the id %s.", collectionName, id)
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := MetaData{Dst: dst, Disposition: cdr.Disposition, Dt: metaDate}
 	doc := MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime,
 		CallMonthly: 0, DurationMonthly: 0}
@@ -370,7 +366,7 @@ func processDidDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 		cdr.Calldate.Day(), dst, cdr.Disposition)
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
 	log.Debugf("Import daily did :  %s for the id %s.", collectionName, id)
-	var collection = session.DB(ODIN_MONGO_DATABASENAME).C(collectionName)
+	var collection = session.DB(config.MongoDbName).C(collectionName)
 	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
 
 	doc := DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: cdr.AnswerWaitTime, CallDaily: 0,

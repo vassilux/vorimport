@@ -7,12 +7,29 @@
 
 set -e
 
-VER_MAJOR="1"
-VER_MINOR="0"
-VER_PATCH="5"
 
-DEPLOY_DIR="vorimport_${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}"
-DEPLOY_FILE_NAME="vorimport_${VER_MAJOR}.${VER_MINOR}.${VER_PATCH}.tar.gz"
+VERSION=$(cat VERSION)
+
+cp main.go main.go.bkp
+
+sed -i "/VERSION = \"X.X.X\"/c\VERSION = \"${VERSION}\"" main.go
+
+make clean
+
+make fmt
+
+make
+
+if [ ! -f ./bin/vorimport ]; then
+	echo "Can not find compiled  project file ./bin/vorimport."
+	echo "Please cheque make output."
+    exit 1
+fi
+
+mv main.go.bkp main.go 
+
+DEPLOY_DIR="vorimport_${VERSION}"
+DEPLOY_FILE_NAME="vorimport_${VERSION}.tar.gz"
 
 if [ -d "$DEPLOY_DIR" ]; then
     rm -rf  "$DEPLOY_DIR"

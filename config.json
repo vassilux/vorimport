@@ -5,11 +5,13 @@
  "dbMySqlName": "asteriskcdrdb",
  "dbMySqlFetchRowNumber": "81",
  "mongoHost": "127.0.0.1",
+ "mongoDbName" : "revor",
  "asteriskID": "asterisk1", 
  "asteriskAddr": "192.168.3.20",
  "asteriskPort" : 5038,
  "asteriskUser" : "vormanager",
  "asteriskPassword": "lepanos",
+ "testCallActive": false,
  "testCallSchedule": 120,
  "eventsMongoHost": "127.0.0.1",
  "notifications": [
@@ -65,6 +67,10 @@
  { "name": "conferences", "direction": 2},
  { "name": "appc-esi-conference", "direction": 3},
  { "name": "app-recorde-prompt", "direction": 3},
- { "name": "appc-esi-conference-room-choise", "direction": 3}
+ { "name": "appc-esi-conference-room-choise", "direction": 3},
+ { "name": "app-set-forward-number", "direction": 3},
+ { "name": "app-ext-blf-custom", "direction": 3},
+ { "name": "app-custom-9999", "direction": 3}
+
  ]
 }
