@@ -42,6 +42,7 @@ type Config struct {
 	AsteriskUser          string
 	AsteriskPassword      string
 	TestCallActive        bool
+	PurgeCelEvents        bool
 	TestCallSchedule      int
 	DialplanContext       []Context
 	Notifications         []string
@@ -153,7 +154,7 @@ func init() {
 }
 
 func getInOutStatus(cdr RawCall) (status int, err error) {
-	config = GetConfig()
+	//config = GetConfig()
 	log.Tracef("Enter into getInOutStatus")
 	for i := range config.DialplanContext {
 		if config.DialplanContext[i].Name == cdr.Dcontext {
@@ -296,19 +297,28 @@ func importJob() {
 					extent = getPeerFromChannel(callDetail.Peer)
 					log.Tracef("Get extent [%s] for peer [%s].",
 						extent, callDetail.Peer)
-					//break
+					break
 				}
 			}
-			if extent != "" {
-				cdr.Dst = extent
+			if extent == "" {
+				cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+				log.Tracef("Exten is empty  for dstchannel [%s] get dst [%s].", cdr.Dstchannel, cdr.Dst)
 			} else {
 				//must be checked cause by testing
-				cdr.Dst = cdr.Dst //getPeerFromChannel(cdr.Dstchannel)
+				if cdr.Dst == "s" {
+					cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
+				} else {
+					cdr.Dst = cdr.Dst
+				}
+
 			}
 
-		} else {
-			cdr.Dst = cdr.Dnid
+			if cdr.Dnid == "" {
+				cdr.Dnid = cdr.Dst
+			}
+
 		}
+		//
 		//
 		err = importCdrToMongo(session, cdr)
 		var importedStatus = 1
@@ -318,7 +328,7 @@ func importJob() {
 		//
 		log.Debugf("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",
 			cdr.Uniqueid, importedStatus)
-		err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, importedStatus)
+		err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, 1)
 		if err != nil {
 			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
 			os.Exit(1)

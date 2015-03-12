@@ -6,9 +6,16 @@ import (
 )
 
 func getPeerFromChannel(channel string) (peer string) {
+	//try to find the destination from channel
+	delim := '-'
+	if strings.Contains(channel, "@") {
+		delim = '@'
+	}
+
 	w := strings.FieldsFunc(channel, func(r rune) bool {
 		switch r {
-		case '/', '-', ' ':
+
+		case '/', delim:
 			return true
 		}
 		return false
@@ -19,6 +26,7 @@ func getPeerFromChannel(channel string) (peer string) {
 	} else {
 		return channel
 	}
+
 }
 
 func schedule(what func(), delay time.Duration) chan bool {

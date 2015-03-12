@@ -22,7 +22,7 @@ func bracket(r rune) bool {
  */
 func getMysqlCdr(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
-	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext NOT LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
+	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext NOT LIKE 'app-alive-test' LIMIT " + config.DbMySqlFetchRowNumber
 	//
 	log.Debugf("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
@@ -128,7 +128,7 @@ func getMySqlCel(db mysql.Conn, uniqueid string) (cel Cel, err error) {
 
 func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
-	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext LIKE 'app-alive-test' LIMIT 0, " + config.DbMySqlFetchRowNumber
+	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext LIKE 'app-alive-test' LIMIT " + config.DbMySqlFetchRowNumber
 	//
 	log.Debugf("Executing request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
@@ -309,6 +309,11 @@ func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
 }
 
 func deleteMySqlCelRecord(db mysql.Conn, uniqueid string) (err error) {
+
+	if config.PurgeCelEvents == false {
+		return nil
+	}
+
 	var query = fmt.Sprintf("DELETE FROM cel WHERE uniqueid = '%s' OR linkedid = '%s'", uniqueid, uniqueid)
 	_, _, err = db.Query(query)
 

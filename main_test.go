@@ -1,25 +1,67 @@
 package main
 
 import (
+	"strings"
 	"testing"
-	"time"
+	//"time"
 )
+
+func getPeerFromChannel(channel string) (peer string) {
+	//try to find the destination from channel
+	delim := '-'
+	if strings.Contains(channel, "@") {
+		delim = '@'
+	}
+
+	w := strings.FieldsFunc(channel, func(r rune) bool {
+		switch r {
+
+		case '/', delim:
+			return true
+		}
+		return false
+	})
+
+	if len(w) >= 3 {
+		return w[len(w)-2]
+	} else {
+		return channel
+	}
+
+}
 
 func Test_DstChannel(t *testing.T) {
 	var channel = "SIP/6006-01010101"
 	peer := getPeerFromChannel(channel)
 	if peer != "6006" {
 		t.Error("It is not good peer for channel [%s].", channel)
+		t.Fail()
 	}
 	channel = "DAHDI/g1/0493948400-01010101"
 	peer = getPeerFromChannel(channel)
 	if peer != "0493948400" {
 		t.Error("It is not good peer [%s] for channel [%s].", peer, channel)
+		t.Fail()
 	}
+	t.Log("dstChannelTester test passed.")
+	channel = "'DAHDI/132-1'"
+	peer = getPeerFromChannel(channel)
+	if peer != "132" {
+		t.Error("It is not good peer [%s] for channel [%s].", peer, channel)
+		t.Fail()
+	}
+
+	channel = "Local/8129@DLPN_DialPlan1-000000e6;1"
+	peer = getPeerFromChannel(channel)
+	if peer != "8129" {
+		t.Errorf("It is not good peer [%s] for channel [%s].", peer, channel)
+		t.Fail()
+	}
+
 	t.Log("dstChannelTester test passed.")
 }
 
-func Test_EventWatcher_MySql(t *testing.T) {
+/*func Test_EventWatcher_MySql(t *testing.T) {
 	loadConfig(false)
 	config := GetConfig()
 	eventWatcher := NewEventWatcher(config)
@@ -71,9 +113,9 @@ func Test_EventWatcher_MySql(t *testing.T) {
 		t.Fail()
 	}
 
-}
+}*/
 
-func Test_CallOriginator(t *testing.T) {
+/*func Test_CallOriginator(t *testing.T) {
 	addr := "192.168.3.20"
 	port := 5038
 	user := "astmanager"
@@ -85,4 +127,4 @@ func Test_CallOriginator(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-}
+}*/

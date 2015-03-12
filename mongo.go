@@ -222,6 +222,7 @@ func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 //
 func processDidImport(session *mgo.Session, cdr RawCall) (err error) {
 	log.Tracef("Import by did : %s\n", cdr.Dnid)
+
 	err = processDidDailyAnalytics(session, cdr)
 	if err != nil {
 		return err

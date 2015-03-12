@@ -28,7 +28,7 @@ Crée un lien symbolic ln -s /opt/revor/vorimport_[version] /opt/vorimport/curre
 
 ### Configuraiton
 Copier le fichier config.sample.json en config.json : cp config.sample.json config.json
-Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les besoin du client.
+Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les besoins du client.
 
 Context app-alive-test de asterisk dialplan est utilisé pour générer un test cyclique de toute la chaine
 Ce context peut être ajouter dans /etc/asterisk/extensions_custom.conf.
