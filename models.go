@@ -21,6 +21,8 @@ type Cdr struct {
 	waitAnswer  int
 	inoutstatus int
 	causeStatus int
+	peer        string
+	did         string
 }
 
 type Cel struct {
@@ -49,6 +51,8 @@ type RawCall struct {
 	Dnid           string        `bson:"dnid"`
 	Dstchannel     string        `bson:"dst_channel"`
 	CallDetails    []CallDetail  `bson:"call_details"`
+	Peer           string        `bson:"peer"`
+	Did            string        `bson:"did"`
 }
 
 type CallDetail struct {
@@ -174,4 +178,10 @@ type MonthlyCall struct {
 	DurationMonthly int               `bson:"duration"`
 	CallsDaily      DatasByDayOfMonth `bson:"calls_per_days"`
 	DurationsDaily  DatasByDayOfMonth `bson:"durations_per_days"`
+}
+
+type Did struct {
+	Did     string `bson:"did"			    json:"did"`
+	Value   string `json:"value"			bson:"value"`
+	Comment string `json:"comment"			bson:"comment"`
 }

@@ -212,17 +212,15 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 
 	var sqlStart = sqlBase + " uniqueid = '" + uniqueid + "' OR linkedid = '" + uniqueid + "' " + sqlOrder
 
-	log.Debugf("getMySqlCallDetails execute request [%s]\n", sqlStart)
-
 	rows, res, err := db.Query(sqlStart)
 	//
 	if err != nil {
-		log.Debugf("getMySqlCallDetailsExecuting request get error [%s]\n", err)
+		log.Errorf("getMySqlCallDetailsExecuting request get error [%s]\n", err)
 		return nil, err
 	}
 
 	if len(rows) == 0 {
-		log.Tracef("getMySqlCallDetails 0 records from cel table for uniqueid [%s]\n", uniqueid)
+		log.Infof("getMySqlCallDetails 0 records from cel table for uniqueid [%s]\n", uniqueid)
 		return nil, nil
 	}
 	//
@@ -243,13 +241,10 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 	var strIds = strings.Join(keys, ",")
 
 	var sqlNext = sqlBase + "uniqueid IN (" + strIds + ") OR linkedid IN (" + strIds + ")" + sqlOrder
-
-	log.Debugf("getMySqlCallDetailsExecuting sqlNext [%s].\n", sqlNext)
-
 	//
 	rowsNext, resNext, errNext := db.Query(sqlNext)
 	if errNext != nil {
-		log.Debugf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, errNext)
+		log.Errorf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, errNext)
 		return nil, errNext
 	}
 
@@ -259,7 +254,7 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 
 	//prepare results array
 	results = make([]CallDetail, len(rowsNext))
-	log.Tracef("getMySqlCallDetails create results  for [%d] rows\r\n", len(rowsNext))
+
 	i := 0
 	for _, rowNext := range rowsNext {
 		//
@@ -295,15 +290,15 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 
 func udpateMySqlCdrImportStatus(db mysql.Conn, uniqueid string, status int) (err error) {
 	var query = fmt.Sprintf("UPDATE cdr SET import = %d WHERE uniqueid = '%s'", status, uniqueid)
+	log.Tracef("update cdr status [%s].\n", query)
 	_, _, err = db.Query(query)
 	//
 	return err
 }
 
 func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
-	/*var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
-	_, _, err = db.Query(query)*/
-	err = udpateMySqlCdrImportStatus(db, uniqueid, 1)
+	var query = fmt.Sprintf("DELETE FROM cdr WHERE uniqueid = '%s'", uniqueid)
+	_, _, err = db.Query(query)
 	//
 	return err
 }

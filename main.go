@@ -46,6 +46,7 @@ type Config struct {
 	TestCallSchedule      int
 	DialplanContext       []Context
 	Notifications         []string
+	Dids                  []string
 }
 
 var (
@@ -154,17 +155,20 @@ func init() {
 }
 
 func getInOutStatus(cdr RawCall) (status int, err error) {
-	//config = GetConfig()
-	log.Tracef("Enter into getInOutStatus")
+	return getInOutContextStatus(cdr.Dcontext)
+}
+
+func getInOutContextStatus(context string) (status int, err error) {
+
 	for i := range config.DialplanContext {
-		if config.DialplanContext[i].Name == cdr.Dcontext {
+		if config.DialplanContext[i].Name == context {
 			status = config.DialplanContext[i].Direction
 			return status, nil
 
 		}
 	}
-	log.Infof("Can not find the call direction for the context [%s].", cdr.Dcontext)
-	return status, errors.New("Can't find the context direction for the context : " + cdr.Dcontext)
+	log.Infof("Can not find the call direction for the context [%s].", context)
+	return status, errors.New("Can't find the context direction for the context : " + context)
 
 }
 
@@ -242,17 +246,17 @@ func importJob() {
 	//
 	var incommingCount = 0
 	var outgoingCount = 0
+
 	for _, cdr := range cdrs {
 		cdr.AsteriskId = config.AsteriskID
 		var datetime = cdr.Calldate.Format(time.RFC3339)
 		log.Tracef("Get raw cdr for the date [%s], the clid [%s] and the context [%s] from asterisk [%s]", datetime, cdr.ClidNumber, cdr.Dcontext, cdr.AsteriskId)
-		var cel Cel
-		cel, err = getMySqlCel(db, cdr.Uniqueid)
+		//var cel Cel
+		//cel, err = getMySqlCel(db, cdr.Uniqueid)
 		var inoutstatus, err = getInOutStatus(cdr)
 		if err != nil {
 			log.Criticalf("Get error[%s]. Please check your configuration file.", err)
 			log.Flush()
-			//panic(err)
 			os.Exit(1)
 		}
 		if inoutstatus == 1 {
@@ -269,17 +273,16 @@ func importJob() {
 			cdr.Disposition = 0
 		}
 
-		if cel.EventTime > 0 {
-			//extract the timezone offset
-			cdr.AnswerWaitTime = int(cel.EventTime - (cdr.Calldate.Unix() - timeZoneOffset))
-		}
+		//if cel.EventTime > 0 {
+		//	//extract the timezone offset
+		//	cdr.AnswerWaitTime = int(cel.EventTime - cdr.Calldate.Unix() - timeZoneOffset)
+		//}
 		//
 		callDetails, err := getMySqlCallDetails(db, cdr.Uniqueid)
 		if err != nil {
 			log.Criticalf("Try to get the call details but get the error[%s].", err)
 			log.Flush()
-			panic(err)
-			//os.Exit(1)
+			os.Exit(1)
 		}
 		//
 		log.Tracef("Get [%d] details records for the call with uniqueud [%s].",
@@ -288,36 +291,63 @@ func importJob() {
 			cdr.CallDetails = callDetails
 		}
 		//
+
 		if cdr.InoutStatus == DIRECTION_CALL_IN {
-			var extent = ""
+			var did = ""
+			var peer = ""
+			var exten = ""
+
+			if len(cdr.CallDetails) == 0 && cdr.Dnid != "" {
+				//a workaround if I can get cel records
+				did = cdr.Dnid
+				log.Tracef("Force did from cdr dnid [%s].", did)
+			}
+
 			for i := range cdr.CallDetails {
 				var callDetail = cdr.CallDetails[i]
-				if callDetail.EventType == "BRIDGE_END" {
+				if i == 0 && callDetail.EventType == "CHAN_START" {
+					exten = callDetail.Exten
+				}
+
+				if callDetail.EventType == "ANSWER" && exten == callDetail.CidDnid && did == "" {
+					did = callDetail.CidDnid
+
+				} else if callDetail.EventType == "BRIDGE_START" {
+					//bridge start gives the time before answer
+					cdr.AnswerWaitTime = int(callDetail.EventTime.Unix() - cdr.Calldate.Unix())
+
+				} else if callDetail.EventType == "BRIDGE_END" {
 					//idea to find the last BRIDGE_END event and get the extention from it
-					extent = getPeerFromChannel(callDetail.Peer)
-					log.Tracef("Get extent [%s] for peer [%s].",
-						extent, callDetail.Peer)
+					peer = getPeerFromChannel(callDetail.Peer)
 					break
 				}
 			}
-			if extent == "" {
-				cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
-				log.Tracef("Exten is empty  for dstchannel [%s] get dst [%s].", cdr.Dstchannel, cdr.Dst)
+
+			if peer == "" {
+				peer = getPeerFromChannel(cdr.Dstchannel)
+			}
+
+			cdr.Peer = peer
+
+			//there is a possibility to have for incomming call a peer for the did number
+			//this is dependes of the customer configuration
+			//try to find a did value from database defined by the customer
+			err := isDid(session, did)
+
+			if err == nil {
+				cdr.Did = did
 			} else {
-				//must be checked cause by testing
-				if cdr.Dst == "s" {
-					cdr.Dst = getPeerFromChannel(cdr.Dstchannel)
-				} else {
-					cdr.Dst = cdr.Dst
-				}
-
+				cdr.Did = ""
 			}
 
-			if cdr.Dnid == "" {
-				cdr.Dnid = cdr.Dst
+			log.Tracef("Didi verification [%s] and cdtDid [%s].\n", did, cdr.Did)
+
+			if cdr.Dst == "s" && peer != "" {
+				//
+				cdr.Dst = cdr.Peer
 			}
 
-		}
+		} //end of the incomming call process
 		//
 		//
 		err = importCdrToMongo(session, cdr)
@@ -328,9 +358,12 @@ func importJob() {
 		//
 		log.Debugf("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",
 			cdr.Uniqueid, importedStatus)
+
 		err = udpateMySqlCdrImportStatus(db, cdr.Uniqueid, 1)
+
 		if err != nil {
 			log.Errorf("Can't update the import status for the call with unique id [%s].", cdr.Uniqueid)
+			log.Flush()
 			os.Exit(1)
 		}
 
@@ -340,6 +373,8 @@ func importJob() {
 		}
 
 	}
+	//
+	log.Trace("End of cdr parsing.\n")
 	//
 	spec := redis.DefaultSpec()
 	channel := "channel_cdr"
