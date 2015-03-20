@@ -224,35 +224,42 @@ func getMySqlCallDetails(db mysql.Conn, uniqueid string) (results []CallDetail, 
 		return nil, nil
 	}
 	//
-	var searchIdMap = make(map[string]string)
-	for _, row := range rows {
-		uniqueid := res.Map("uniqueid")
-		linkedid := res.Map("linkedid")
-		keyUniqueid := fmt.Sprintf("'%s'", row.Str(uniqueid))
-		keyLinkedId := fmt.Sprintf("'%s'", row.Str(linkedid))
-		searchIdMap[keyUniqueid] = keyUniqueid
-		searchIdMap[keyLinkedId] = keyLinkedId
+	//var searchIdMap = make(map[string]string)
+	//for _, row := range rows {
+	//	uniqueid := res.Map("uniqueid")
+	//	linkedid := res.Map("linkedid")
+	//	keyUniqueid := fmt.Sprintf("'%s'", row.Str(uniqueid))
+	//	keyLinkedId := fmt.Sprintf("'%s'", row.Str(linkedid))
+	//	searchIdMap[keyUniqueid] = keyUniqueid
+	//	searchIdMap[keyLinkedId] = keyLinkedId
 
-	}
-	var keys []string
-	for k := range searchIdMap {
-		keys = append(keys, k)
-	}
-	var strIds = strings.Join(keys, ",")
+	//}
+	//var keys []string
+	//for k := range searchIdMap {
+	//	keys = append(keys, k)
+	//}
+	//var strIds = strings.Join(keys, ",")
 
-	var sqlNext = sqlBase + "uniqueid IN (" + strIds + ") OR linkedid IN (" + strIds + ")" + sqlOrder
-	//
-	rowsNext, resNext, errNext := db.Query(sqlNext)
-	if errNext != nil {
-		log.Errorf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, errNext)
-		return nil, errNext
-	}
+	//var sqlNext = sqlBase + "uniqueid IN (" + strIds + ") OR linkedid IN (" + strIds + ")" + sqlOrder
+	////
 
-	if len(rowsNext) == 0 {
-		return nil, nil
-	}
+	//log.Tracef("Call details query : [%s]", sqlNext)
 
-	//prepare results array
+	//rowsNext, resNext, errNext := db.Query(sqlNext)
+	//if errNext != nil {
+	//	log.Errorf(" getMySqlCallDetailsExecuting request [%s] and get error [%s] \r\n", sqlNext, errNext)
+	//	return nil, errNext
+	//}
+
+	//if len(rowsNext) == 0 {
+	//	return nil, nil
+	//}
+
+	rowsNext := rows
+	resNext := res
+
+	////prepare results array
+
 	results = make([]CallDetail, len(rowsNext))
 
 	i := 0

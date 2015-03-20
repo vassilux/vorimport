@@ -6,6 +6,10 @@ import (
 )
 
 func getPeerFromChannel(channel string) (peer string) {
+	if strings.Contains(channel, "IAX2/trunk_") {
+		return ""
+	}
+
 	//try to find the destination from channel
 	delim := '-'
 	if strings.Contains(channel, "@") {

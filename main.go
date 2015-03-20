@@ -47,6 +47,7 @@ type Config struct {
 	DialplanContext       []Context
 	Notifications         []string
 	Dids                  []string
+	ExcludeFromAnalytics  []string
 }
 
 var (
@@ -64,8 +65,9 @@ var (
 )
 
 const (
-	DIRECTION_CALL_OUT = 1
-	DIRECTION_CALL_IN  = 2
+	DIRECTION_CALL_OUT    = 1
+	DIRECTION_CALL_IN     = 2
+	DIRECTION_CALL_IGNORE = 3
 )
 
 var (
@@ -285,8 +287,7 @@ func importJob() {
 			os.Exit(1)
 		}
 		//
-		log.Tracef("Get [%d] details records for the call with uniqueud [%s].",
-			len(callDetails), cdr.Uniqueid)
+		log.Tracef("Get [%d] details records for the call with uniqueid [%s].", len(callDetails), cdr.Uniqueid)
 		if callDetails != nil {
 			cdr.CallDetails = callDetails
 		}
@@ -307,16 +308,19 @@ func importJob() {
 				var callDetail = cdr.CallDetails[i]
 				if i == 0 && callDetail.EventType == "CHAN_START" {
 					exten = callDetail.Exten
+					did = callDetail.Exten
 				}
 
 				if callDetail.EventType == "ANSWER" && exten == callDetail.CidDnid && did == "" {
+					//try to find did
 					did = callDetail.CidDnid
 
 				} else if callDetail.EventType == "BRIDGE_START" {
 					//bridge start gives the time before answer
 					cdr.AnswerWaitTime = int(callDetail.EventTime.Unix() - cdr.Calldate.Unix())
+					peer = getPeerFromChannel(callDetail.Peer)
 
-				} else if callDetail.EventType == "BRIDGE_END" {
+				} else if callDetail.EventType == "BRIDGE_END" && peer == "" {
 					//idea to find the last BRIDGE_END event and get the extention from it
 					peer = getPeerFromChannel(callDetail.Peer)
 					break
@@ -325,6 +329,11 @@ func importJob() {
 
 			if peer == "" {
 				peer = getPeerFromChannel(cdr.Dstchannel)
+			}
+
+			if peer == "" {
+				//can be case that the call is not answered
+				peer = cdr.Dst
 			}
 
 			cdr.Peer = peer
@@ -340,7 +349,7 @@ func importJob() {
 				cdr.Did = ""
 			}
 
-			log.Tracef("Didi verification [%s] and cdtDid [%s].\n", did, cdr.Did)
+			log.Tracef("Did [%s] and peer [%s] for the call with uniqueid [%s].\n", did, peer, cdr.Uniqueid)
 
 			if cdr.Dst == "s" && peer != "" {
 				//
@@ -353,7 +362,9 @@ func importJob() {
 		err = importCdrToMongo(session, cdr)
 		var importedStatus = 1
 		if err != nil {
-			importedStatus = -1
+			log.Errorf("Can't import cdr to mongo [%v].", err)
+			log.Flush()
+			os.Exit(1)
 		}
 		//
 		log.Debugf("Import executed for unique id [%s] with code : [%d], try process the mysql updating.\n",

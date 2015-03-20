@@ -16,13 +16,25 @@ func processPeerMonthlySummary(session *mgo.Session, cdr RawCall) (err error) {
 	var peer = ""
 	if cdr.InoutStatus == DIRECTION_CALL_OUT {
 		collectionName = "monthlypeeroutgoing_summary"
-		peer = cdr.Src
+		if len(cdr.Src) == 4 {
+			peer = cdr.Src
+		} else {
+			peer = cdr.Dst
+		}
+
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
 		collectionName = "monthlypeerincomming_summary"
 		peer = cdr.Peer
+
 	} else {
 		return errors.New("Can't detect the call context")
 	}
+
+	if len(peer) > 5 {
+		serr := fmt.Sprintf("Peer monthly summary something is wrong with the call [%s].Please verify your log.\n", cdr.Uniqueid)
+		return errors.New(serr)
+	}
+
 	//
 	var id = fmt.Sprintf("%04d%02d-%s", cdr.Calldate.Year(),
 		cdr.Calldate.Month(), peer)
@@ -77,19 +89,36 @@ func processPeerMonthlySummary(session *mgo.Session, cdr RawCall) (err error) {
 func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
-	var dst = ""
+	var peer = ""
 	if cdr.InoutStatus == DIRECTION_CALL_OUT {
 		collectionName = "monthlypeer_outgoing"
-		dst = cdr.Src
+		if len(cdr.Src) == 4 {
+			peer = cdr.Src
+		} else {
+			peer = cdr.Dst
+		}
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
 		collectionName = "monthlypeer_incomming"
-		dst = cdr.Peer
+		peer = cdr.Peer
 	} else {
 		return errors.New("Can't detect the call context")
 	}
+
+	if len(peer) > 5 {
+		serr := fmt.Sprintf("Monthly analytics something is wrong with the call [%s].Please verify your log.\n", cdr.Uniqueid)
+		return errors.New(serr)
+	}
+
+	if peer == "" {
+		var serrr = fmt.Sprintf("Can't get a valide destination for the call with the uniqueid [%s].\n", cdr.Uniqueid)
+		log.Error(serrr)
+		log.Flush()
+		return errors.New(serrr)
+	}
+
 	//
 	var id = fmt.Sprintf("%04d%02d-%s-%d", cdr.Calldate.Year(),
-		cdr.Calldate.Month(), dst, cdr.Disposition)
+		cdr.Calldate.Month(), peer, cdr.Disposition)
 	//
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(),
 		1, 1, 0, 0, 0, time.UTC)
@@ -97,7 +126,7 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 
 	var collection = session.DB(config.MongoDbName).C(collectionName)
 
-	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
+	metaDoc := MetaData{Dst: peer, Dt: metaDate, Disposition: cdr.Disposition}
 
 	doc := MonthlyCall{Id: id, Meta: metaDoc, AnswereWaitTime: 0,
 		CallMonthly: 0, DurationMonthly: 0}
@@ -143,25 +172,37 @@ func processMonthlyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 func processDailyAnalytics(session *mgo.Session, cdr RawCall) (err error) {
 	//
 	var collectionName = ""
-	var dst = ""
+	var peer = ""
 	if cdr.InoutStatus == DIRECTION_CALL_OUT {
 		collectionName = "dailypeer_outgoing"
-		dst = cdr.Src
+		if len(cdr.Src) == 4 {
+			peer = cdr.Src
+		} else {
+			peer = cdr.Dst
+		}
+
 	} else if cdr.InoutStatus == DIRECTION_CALL_IN {
 		collectionName = "dailypeer_incomming"
-		dst = cdr.Peer
+		peer = cdr.Peer
+
 	} else {
 		return errors.New("Daily analytics can't detect the call context")
 	}
+
+	if len(peer) > 5 {
+		serr := fmt.Sprintf("Daily analytics something is wrong with the call [%s] cause peer [%s].Please verify your log.\n", cdr.Uniqueid, peer)
+		return errors.New(serr)
+	}
+
 	//
 	var id = fmt.Sprintf("%04d%02d%02d-%s-%d", cdr.Calldate.Year(), cdr.Calldate.Month(),
-		cdr.Calldate.Day(), dst, cdr.Disposition)
+		cdr.Calldate.Day(), peer, cdr.Disposition)
 
 	var metaDate = time.Date(cdr.Calldate.Year(), cdr.Calldate.Month(), cdr.Calldate.Day(), 1, 0, 0, 0, time.UTC)
 
 	var collection = session.DB(config.MongoDbName).C(collectionName)
 
-	metaDoc := MetaData{Dst: dst, Dt: metaDate, Disposition: cdr.Disposition}
+	metaDoc := MetaData{Dst: peer, Dt: metaDate, Disposition: cdr.Disposition}
 
 	doc := DailyCall{Id: id, Meta: metaDoc, AnswereWaitTime: 0, CallDaily: 0,
 		DurationDaily: 0}

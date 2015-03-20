@@ -22,7 +22,13 @@
 	 { "name": "DLPN_DialPlan1", "direction": 2},
 	 { "name": "ringroups-custom-1", "direction": 2},
 	 { "name": "DID_span_1", "direction": 2},
-	 { "name": "app-daynight-toggle", "direction": 3}
- ]
+	 { "name": "app-daynight-toggle", "direction": 3},
+	 { "name": "app-pickup", "direction": 3},
+	 { "name": "asterisk_guitools", "direction": 3},
+	 { "name": "default", "direction": 3}
+ ],
+	"excludeFromAnalytics": [
+		
+	]
 
 }

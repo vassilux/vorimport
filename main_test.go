@@ -7,6 +7,11 @@ import (
 )
 
 func getPeerFromChannel(channel string) (peer string) {
+
+	if strings.Contains(channel, "IAX2/trunk_") {
+		return ""
+	}
+
 	//try to find the destination from channel
 	delim := '-'
 	if strings.Contains(channel, "@") {
@@ -54,6 +59,13 @@ func Test_DstChannel(t *testing.T) {
 	channel = "Local/8129@DLPN_DialPlan1-000000e6;1"
 	peer = getPeerFromChannel(channel)
 	if peer != "8129" {
+		t.Errorf("It is not good peer [%s] for channel [%s].", peer, channel)
+		t.Fail()
+	}
+
+	channel = "IAX2/trunk_2-13959"
+	peer = getPeerFromChannel(channel)
+	if peer != "" {
 		t.Errorf("It is not good peer [%s] for channel [%s].", peer, channel)
 		t.Fail()
 	}

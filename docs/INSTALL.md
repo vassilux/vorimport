@@ -56,6 +56,10 @@ Mise à jour est identique à l'installation sans la partie de la configuration.
 
 Il faut copier le ficheir de la configuration actuel (/opt/vorimport/current/config.json) dans le repertoire /opt/vorimport/vorimport_[version] 
 
+Paramètre excludeFromAnalytics permet exclure des SDA de processus d'importation. Ce cas peut être intéressant car les numéro des SDA sont équivalant au numéro des postes.
+
+Importat : Importation de SDA est basée sur les SDA saisie dans la base de données. Ces SDA peut être saisie via l'interface graphique
+
 
 ## Notes
 		Cluster
