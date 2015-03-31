@@ -30,6 +30,13 @@ Crée un lien symbolic ln -s /opt/revor/vorimport_[version] /opt/vorimport/curre
 Copier le fichier config.sample.json en config.json : cp config.sample.json config.json
 Addapter ce fichier à la configuraiton de système : le dialplan de iPBX et les besoins du client.
 
+Paramètre cleanupRequests permet d'exécuter les requetes personnalisées avant lencement d'importaiton de données de mysql vers mongo.
+Mot clé delete est interdit à utiliser.
+
+Paramètre excludeFromAnalytics permet exclure des SDA de processus d'importation. Ce cas peut être intéressant car les numéro des SDA sont équivalant au numéro des postes.
+
+Importat : Importation de SDA est basée sur les SDA saisie dans la base de données. Ces SDA peut être saisie via l'interface graphique
+
 Context app-alive-test de asterisk dialplan est utilisé pour générer un test cyclique de toute la chaine
 Ce context peut être ajouter dans /etc/asterisk/extensions_custom.conf.
 Voici un example
@@ -55,10 +62,6 @@ la fonction de test d'appel est activée.
 Mise à jour est identique à l'installation sans la partie de la configuration.
 
 Il faut copier le ficheir de la configuration actuel (/opt/vorimport/current/config.json) dans le repertoire /opt/vorimport/vorimport_[version] 
-
-Paramètre excludeFromAnalytics permet exclure des SDA de processus d'importation. Ce cas peut être intéressant car les numéro des SDA sont équivalant au numéro des postes.
-
-Importat : Importation de SDA est basée sur les SDA saisie dans la base de données. Ces SDA peut être saisie via l'interface graphique
 
 
 ## Notes

@@ -33,7 +33,9 @@ function main()
   	fi  
 	
 	echo "delete from cdr;" | mysql -u root -plepanos -h127.0.0.1 asteriskcdrdb
+	
 	echo "delete from cel;" | mysql -u root -plepanos -h127.0.0.1 asteriskcdrdb
+	
 	mysql -uroot -plepanos -h127.0.0.1 asteriskcdrdb < ${SCRIPTPATH}/asteriskcdrdb.sql 
 }
 

@@ -4,6 +4,23 @@ Release Notes vorimport
 
 ==================================================================================
 
+Release 1.0.9 date : 31/03/2015
+
+==================================================================================
+
+Fixing:
+	
+	Nothing jsut up the version
+
+New:
+	
+
+
+==================================================================================
+
+
+==================================================================================
+
 Release 1.0.7 date : 20/03/2015
 
 ==================================================================================
@@ -15,6 +32,7 @@ Fixing:
 New:
 
 	Add new parameter excludeFromAnalytics. Allow exclude did from analysing process
+	Add new parameter cleanupRequests. Allow execute customize requests before import datas from mysql to mongo. Delete word is forbiden
 	
 
 

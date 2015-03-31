@@ -48,6 +48,7 @@ type Config struct {
 	Notifications         []string
 	Dids                  []string
 	ExcludeFromAnalytics  []string
+	CleanupRequests       []string
 }
 
 var (
@@ -236,6 +237,13 @@ func importJob() {
 	defer session.Close()
 	sendMongoEventNotification(MONGOK)
 	log.Debug("Connected to the mongo database with success.")
+	//
+	err = executeCustomRequests(db)
+	if err != nil {
+		log.Errorf("Error to execute customise request : %s", err)
+		log.Flush()
+		os.Exit(1)
+	}
 	//
 	cdrs, err := getMysqlCdr(db)
 	//

@@ -47,6 +47,7 @@
 	 { "name": "DID_span_4", "direction": 1},
 	 { "name": "DLPN_DialPlan1", "direction": 1},
 	 { "name": "DLPN_DialPlan2", "direction": 2},
+	 { "name": "DLPN_DialPlan3", "direction": 2},
 	 { "name": "process-in-fax", "direction": 3},
 	 { "name": "process-in-Modem-RSI", "direction": 3},
 	 { "name": "process-in-rsi", "direction": 3},
@@ -57,11 +58,14 @@
 	 { "name": "ringroups-custom-4", "direction": 2},
      { "name": "ringroups-custom-5", "direction": 2},
 	 { "name": "stdexten", "direction": 3},
-	 { "name": "voicemenu-custom-1", "direction": 3}
-
-	
+	 { "name": "voicemenu-custom-1", "direction": 3}	
  ],
 	"excludeFromAnalytics": [
 		"8889"
+	],
+	
+	"cleanupRequests" : [
+		"update cdr set import = 66 where  dst LIKE '%N%' and import = 0",
+		"update cdr set import = 66 where  dst LIKE '%NOANSWER%' and import = 0"
 	]
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	log "github.com/cihub/seelog"
 	"github.com/ziutek/mymysql/mysql"
@@ -130,7 +131,7 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 	log.Tracef("Enter into getMysqlCdr")
 	myQuery := "SELECT UNIX_TIMESTAMP(calldate) as calldate, clid, src, dst, channel, dcontext, disposition,billsec,duration,uniqueid,dstchannel, dnid, recordfile from asteriskcdrdb.cdr WHERE import = 0 and dcontext LIKE 'app-alive-test' LIMIT " + config.DbMySqlFetchRowNumber
 	//
-	log.Debugf("Executing request [%s]\r\n", myQuery)
+	log.Debugf("Equery = strings.ToUpper(query)xecuting request [%s]\r\n", myQuery)
 	rows, res, err := db.Query(myQuery)
 	//
 	if err != nil {
@@ -145,7 +146,7 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 	for _, row := range rows {
 		//
 		var c RawCall //Cdr
-		//mapping databases fields
+		//mappingquery = strings.ToUpper(query) databases fields
 		calldate := res.Map("calldate")
 		clid := res.Map("clid")
 		src := res.Map("src")
@@ -161,6 +162,7 @@ func getMysqlCdrTestCall(db mysql.Conn) (results []RawCall, err error) {
 		dstchannel := res.Map("dstchannel")
 		//
 		raw_clid := strings.FieldsFunc(row.Str(clid), bracket)
+
 		caller_name := ""
 		caller_number := ""
 
@@ -301,6 +303,24 @@ func udpateMySqlCdrImportStatus(db mysql.Conn, uniqueid string, status int) (err
 	_, _, err = db.Query(query)
 	//
 	return err
+}
+
+//Execute customize requests provisted by configuration file
+func executeCustomRequests(db mysql.Conn) (err error) {
+	for i := range config.CleanupRequests {
+		var query = config.CleanupRequests[i]
+
+		if strings.Contains(strings.ToLower(query), "delete") == true {
+			return errors.New("Using delete keyword is forbiden. Please check your configuration file(config.json)")
+		}
+		_, _, err = db.Query(query)
+
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
 }
 
 func deleteMySqlCdrRecord(db mysql.Conn, uniqueid string) (err error) {
